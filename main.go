@@ -10,7 +10,6 @@ import (
 )
 
 /*
-	?  how should i respond to inccorect user input
 example:
 	*{"name": "Ilya", "hobby": "Programming"}
 	*localhost:9000/?id=1
@@ -18,8 +17,8 @@ example:
 
 // User represents user with name and hobby strings fields.
 type User struct {
-	Name  string
-	Hobby string
+	Name  string `json:"name"`
+	Hobby string `json:"hobby"`
 }
 
 var idUserDB = make(map[int]User)
@@ -69,29 +68,44 @@ func addUser(writer http.ResponseWriter, req *http.Request) {
 
 func getUser(writer http.ResponseWriter, req *http.Request) {
 	urlStr := req.URL.String()
-	urlParsed, _ := url.Parse(urlStr)
-	querry, errQuerry := url.ParseQuery(urlParsed.RawQuery)
-	if errQuerry != nil {
-		fmt.Fprintf(writer, "incorrect string querry\n")
-		log.Printf("incorrect string querry\n")
+	urlParsed, err := url.Parse(urlStr)
+	if err != nil {
+		writer.WriteHeader(http.StatusPreconditionFailed)
+		log.Printf("incorrect string query\n")
+		return
+	}
+	query, err := url.ParseQuery(urlParsed.RawQuery)
+	if err != nil {
+		fmt.Fprintf(writer, "incorrect string query\n")
+		writer.WriteHeader(http.StatusPreconditionFailed)
+		log.Printf("incorrect string query\n")
 		return
 	}
 	var userID int
+	idNum, found := query["id"]
+	if !found {
+		writer.WriteHeader(http.StatusPreconditionFailed)
+		fmt.Fprintf(writer, "incorrect key\n")
+		log.Printf("incorrect key\n")
+		return
+	}
 
-	if i, err := strconv.Atoi(querry["id"][0]); err == nil {
+	if i, err := strconv.Atoi(idNum[0]); err == nil {
 		userID = i
 	} else {
 		log.Printf("id is not correct\n")
+		writer.WriteHeader(http.StatusPreconditionFailed)
 		return
 	}
 	user, ok := idUserDB[userID]
 	if !ok {
+		writer.WriteHeader(http.StatusPreconditionFailed)
 		fmt.Fprintf(writer, "no user with this id %d", userID)
 		log.Printf("no user with this id %d", userID)
+		return
 	}
 	nameHobbyDB[user.Name] = user.Hobby
-	fmt.Fprintf(writer, `{"Name":"%s","Hobby":"%s"}`, user.Name, user.Hobby)
-	log.Printf(`{"name":"%s","hobby":"%s"}`, user.Name, user.Hobby) //*to do new encoder
+	json.NewEncoder(writer).Encode(user)
 }
 
 func getID() int {
