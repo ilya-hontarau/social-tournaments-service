@@ -48,8 +48,8 @@ func addUser(writer http.ResponseWriter, req *http.Request) {
 	var user User
 	err := json.NewDecoder(req.Body).Decode(&user)
 	if err != nil {
-		fmt.Fprintf(writer, "cannot decode json: %s", err)
 		writer.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(writer, "cannot decode json: %s", err)
 		return
 	}
 	if _, found := nameHobbyDB[user.Name]; found {
@@ -76,8 +76,8 @@ func getUser(writer http.ResponseWriter, req *http.Request) {
 	}
 	query, err := url.ParseQuery(urlParsed.RawQuery)
 	if err != nil {
-		fmt.Fprintf(writer, "incorrect string query\n")
 		writer.WriteHeader(http.StatusPreconditionFailed)
+		fmt.Fprintf(writer, "incorrect string query\n")
 		log.Printf("incorrect string query\n")
 		return
 	}
