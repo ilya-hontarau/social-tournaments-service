@@ -25,7 +25,7 @@ var idUserDB = make(map[int]User)
 
 var nameHobbyDB = make(map[string]string)
 
-var number int
+var nextID int
 
 func main() {
 	http.HandleFunc("/", handler)
@@ -53,62 +53,58 @@ func addUser(writer http.ResponseWriter, req *http.Request) {
 		return
 	}
 	if _, found := nameHobbyDB[user.Name]; found {
-		log.Printf("this user %s with hobby %s already exists\n", user.Name, user.Hobby)
+		log.Printf("this user %s with hobby %s already exists", user.Name, user.Hobby)
 		writer.WriteHeader(http.StatusPreconditionFailed)
-		fmt.Fprintf(writer, "this user already exists\n")
+		fmt.Fprintf(writer, "this user already exists")
 		return
 	}
 	nameHobbyDB[user.Name] = user.Hobby
-	userID := getID()
+	userID := getNextID()
 	idUserDB[userID] = user
-	fmt.Fprintf(writer, "hello, %s, your id is %d\n", user.Name, userID)
+	fmt.Fprintf(writer, "hello, %s, your id is %d", user.Name, userID)
 	log.Println(user, userID)
 
 }
 
 func getUser(writer http.ResponseWriter, req *http.Request) {
-	urlStr := req.URL.String()
-	urlParsed, err := url.Parse(urlStr)
+	urlParsed, err := url.Parse(req.URL.String())
 	if err != nil {
 		writer.WriteHeader(http.StatusPreconditionFailed)
-		log.Printf("incorrect string query\n")
+		log.Printf("incorrect string query")
 		return
 	}
 	query, err := url.ParseQuery(urlParsed.RawQuery)
 	if err != nil {
 		writer.WriteHeader(http.StatusPreconditionFailed)
-		fmt.Fprintf(writer, "incorrect string query\n")
-		log.Printf("incorrect string query\n")
+		fmt.Fprintf(writer, "incorrect string query")
+		log.Printf("incorrect string query")
 		return
 	}
-	var userID int
 	idNum, found := query["id"]
 	if !found {
 		writer.WriteHeader(http.StatusPreconditionFailed)
-		fmt.Fprintf(writer, "incorrect key\n")
-		log.Printf("incorrect key\n")
+		fmt.Fprintf(writer, "incorrect key")
+		log.Printf("incorrect key")
 		return
 	}
 
-	if i, err := strconv.Atoi(idNum[0]); err == nil {
-		userID = i
-	} else {
-		log.Printf("id is not correct\n")
+	userID, err := strconv.Atoi(idNum[0])
+	if err != nil {
+		log.Printf("id is not correct")
 		writer.WriteHeader(http.StatusPreconditionFailed)
 		return
 	}
 	user, ok := idUserDB[userID]
 	if !ok {
-		writer.WriteHeader(http.StatusPreconditionFailed)
+		writer.WriteHeader(http.StatusNotFound)
 		fmt.Fprintf(writer, "no user with this id %d", userID)
 		log.Printf("no user with this id %d", userID)
 		return
 	}
-	nameHobbyDB[user.Name] = user.Hobby
 	json.NewEncoder(writer).Encode(user)
 }
 
-func getID() int {
-	number++
-	return number
+func getNextID() int {
+	nextID++
+	return nextID
 }
