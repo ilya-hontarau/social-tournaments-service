@@ -76,8 +76,9 @@ func getUser(writer http.ResponseWriter, req *http.Request) {
 	}
 	userID, err := strconv.Atoi(idNum[0])
 	if err != nil {
-		log.Printf("id is not correct")
 		writer.WriteHeader(http.StatusPreconditionFailed)
+		fmt.Fprintf(writer, "id is not correct")
+		log.Printf("id is not correct")
 		return
 	}
 	user, ok := idUserDB[userID]
