@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
 	"strconv"
 )
 
@@ -67,19 +66,7 @@ func addUser(writer http.ResponseWriter, req *http.Request) {
 }
 
 func getUser(writer http.ResponseWriter, req *http.Request) {
-	urlParsed, err := url.Parse(req.URL.String())
-	if err != nil {
-		writer.WriteHeader(http.StatusPreconditionFailed)
-		log.Printf("incorrect string query")
-		return
-	}
-	query, err := url.ParseQuery(urlParsed.RawQuery)
-	if err != nil {
-		writer.WriteHeader(http.StatusPreconditionFailed)
-		fmt.Fprintf(writer, "incorrect string query")
-		log.Printf("incorrect string query")
-		return
-	}
+	query := req.URL.Query()
 	idNum, found := query["id"]
 	if !found {
 		writer.WriteHeader(http.StatusPreconditionFailed)
@@ -87,7 +74,6 @@ func getUser(writer http.ResponseWriter, req *http.Request) {
 		log.Printf("incorrect key")
 		return
 	}
-
 	userID, err := strconv.Atoi(idNum[0])
 	if err != nil {
 		log.Printf("id is not correct")
@@ -101,7 +87,7 @@ func getUser(writer http.ResponseWriter, req *http.Request) {
 		log.Printf("no user with this id %d", userID)
 		return
 	}
-	json.NewEncoder(writer).Encode(user)
+	_ = json.NewEncoder(writer).Encode(user)
 }
 
 func getNextID() int {
