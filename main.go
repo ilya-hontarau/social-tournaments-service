@@ -13,8 +13,9 @@ import (
 )
 
 //TODO: create a function that parse URL and switch according to URl
+//TODO: create a Server constructor
 
-// User represents user with name, ID and Balance strings fields.
+// User represents a single user that is registered in a social tournaments service.
 type User struct {
 	ID      int64  `json:"id"`
 	Name    string `json:"name"`
@@ -34,7 +35,7 @@ func dbConn() (db *sql.DB, err error) {
 
 	db, err = sql.Open(dbDriver, fmt.Sprintf("%s:%s@/%s", dbUser, dbPass, dbName))
 	if err != nil {
-		return nil, fmt.Errorf("cannot open db")
+		return nil, fmt.Errorf("can't open db: %s", err)
 	}
 	return db, nil
 }
@@ -88,7 +89,8 @@ func (s *Server) addUser(writer http.ResponseWriter, req *http.Request) {
 	})
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(writer, "can't encode json\n")
+		fmt.Fprintf(writer, "can't encode json: %s\n", err)
+		return
 	}
 
 }
@@ -119,6 +121,7 @@ func (s *Server) getUser(writer http.ResponseWriter, req *http.Request) {
 	err = json.NewEncoder(writer).Encode(user)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(writer, "can't encode json\n")
+		fmt.Fprintf(writer, "can't encode json: %s\n", err)
+		return
 	}
 }
