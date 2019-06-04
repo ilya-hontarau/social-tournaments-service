@@ -12,7 +12,9 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-// User represents user with name and hobby strings fields.
+//TODO: create a function that parse URL and switch according to URl
+
+// User represents user with name, ID and Balance strings fields.
 type User struct {
 	ID      int64  `json:"id"`
 	Name    string `json:"name"`
@@ -32,7 +34,7 @@ func dbConn() (db *sql.DB, err error) {
 
 	db, err = sql.Open(dbDriver, fmt.Sprintf("%s:%s@/%s", dbUser, dbPass, dbName))
 	if err != nil {
-		return db, err
+		return nil, fmt.Errorf("cannot open db")
 	}
 	return db, nil
 }
@@ -40,7 +42,8 @@ func dbConn() (db *sql.DB, err error) {
 func main() {
 	db, err := dbConn()
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
+		return
 	}
 	defer db.Close()
 	s := Server{
@@ -50,7 +53,8 @@ func main() {
 	http.HandleFunc("/user/", s.getUser)
 	err = http.ListenAndServe("localhost:9000", nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
+		return
 	}
 }
 
@@ -69,13 +73,13 @@ func (s *Server) addUser(writer http.ResponseWriter, req *http.Request) {
 	insert, err := s.DB.Exec("INSERT INTO user(name,balance) VALUES(?,?)", user.Name, 0)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(writer, "insertion has failed: %s", err)
+		fmt.Fprintf(writer, "could not add user: %s", err)
 		return
 	}
-
 	user.ID, err = insert.LastInsertId()
 	if err != nil {
-		panic(err.Error())
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 	err = json.NewEncoder(writer).Encode(struct {
 		ID int64 `json:"id"`
@@ -84,9 +88,9 @@ func (s *Server) addUser(writer http.ResponseWriter, req *http.Request) {
 	})
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(writer, "can't decode json\n")
+		fmt.Fprintf(writer, "can't encode json\n")
 	}
-	log.Printf("id is %d", user.ID)
+
 }
 
 func (s *Server) getUser(writer http.ResponseWriter, req *http.Request) {
@@ -94,7 +98,7 @@ func (s *Server) getUser(writer http.ResponseWriter, req *http.Request) {
 		http.NotFound(writer, req)
 		return
 	}
-	idIndex := strings.LastIndex(req.URL.Path, "/") //idIndex can't be -1
+	idIndex := strings.LastIndex(req.URL.Path, "/") // idIndex can't be -1
 	id, err := strconv.Atoi(req.URL.Path[idIndex+1:])
 	if err != nil {
 		writer.WriteHeader(http.StatusBadRequest)
@@ -106,7 +110,6 @@ func (s *Server) getUser(writer http.ResponseWriter, req *http.Request) {
 		Scan(&user.ID, &user.Name, &user.Balance)
 	if err == sql.ErrNoRows {
 		writer.WriteHeader(http.StatusNotFound)
-		fmt.Fprintf(writer, "id not found: %s", err)
 		return
 	}
 	if err != nil {
