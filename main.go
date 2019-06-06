@@ -22,16 +22,18 @@ type User struct {
 	Balance uint   `json:"balance"`
 }
 
-const userEnvVar = "DB_USER"
-const passEnvVar = "DB_PASS"
-const dbNameEnvVar = "DB_NAME"
+const (
+	userEnvVar   = "DB_USER"
+	passEnvVar   = "DB_PASS"
+	dbNameEnvVar = "DB_NAME"
+)
 
-// Server represents а db server in social.
+// Server represents а db server in social tournaments service.
 type Server struct {
 	DB *sql.DB
 }
 
-// NewServer constructs a Server, according to existing env variables
+// NewServer constructs a Server, according to existing env variables.
 func NewServer() (*Server, error) {
 	dbUser := os.Getenv(userEnvVar)
 	if dbUser == "" {
@@ -46,12 +48,6 @@ func NewServer() (*Server, error) {
 	if err != nil {
 		return nil, fmt.Errorf("can't open db: %s", err)
 	}
-	if err := db.Ping(); err != nil {
-		if dbPass == "" {
-			return nil, fmt.Errorf(`no "%s" env variable: %s`, passEnvVar, err)
-		}
-		return nil, err
-	}
 	return &Server{db}, nil
 }
 
@@ -65,7 +61,7 @@ func main() {
 
 	http.HandleFunc("/user", s.addUser)
 	http.HandleFunc("/user/", s.getUser)
-	err = http.ListenAndServe("localhost:9100", nil)
+	err = http.ListenAndServe("localhost:9000", nil)
 	if err != nil {
 		log.Print(err)
 		return
