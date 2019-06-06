@@ -48,7 +48,7 @@ func NewServer() (*Server, error) {
 	if err != nil {
 		return nil, fmt.Errorf("can't open db: %s", err)
 	}
-	return &Server{db}, nil
+	return &Server{DB: db}, nil
 }
 
 func main() {
