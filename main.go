@@ -28,9 +28,18 @@ const (
 	dbNameEnvVar = "DB_NAME"
 )
 
+type message int
+
+const (
+	def message = iota
+	take
+	fund
+)
+
 // Server represents а db server in social tournaments service.
 type Server struct {
-	DB *sql.DB
+	DB  *sql.DB
+	msg message
 }
 
 // NewServer constructs a Server, according to existing env variables.
@@ -60,7 +69,7 @@ func main() {
 	defer s.DB.Close()
 
 	http.HandleFunc("/user", s.addUser)
-	http.HandleFunc("/user/", s.getUser)
+	http.HandleFunc("/user/", s.handler)
 	err = http.ListenAndServe("localhost:9000", nil)
 	if err != nil {
 		log.Print(err)
@@ -102,6 +111,60 @@ func (s *Server) addUser(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+}
+
+func (s *Server) handler(w http.ResponseWriter, req *http.Request) {
+	index := strings.LastIndex(req.URL.Path, "/") // idIndex can't be -1
+	word := req.URL.Path[index+1:]
+	switch word {
+	case "take":
+		s.msg = take
+	case "fund":
+		s.msg = fund
+	default:
+		s.getUser(w, req)
+		return
+	}
+	s.processBonus(w, req)
+
+}
+
+func (s *Server) processBonus(w http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodPost {
+		http.NotFound(w, req)
+		return
+	}
+
+	id, err := strconv.Atoi((strings.Split(req.URL.Path, "/"))[2])
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, "incorrect id: %s", err)
+		return
+	}
+	type Bonus struct {
+		Points int `json:"points"`
+	}
+	var bonus Bonus
+	err = json.NewDecoder(req.Body).Decode(&bonus)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, "cannot decode json: %s", err)
+		return
+	}
+	switch s.msg {
+	case fund:
+		_, err = s.DB.Exec("UPDATE user SET balance = balance + ? WHERE id = ?", bonus.Points, id)
+	case take:
+		_, err = s.DB.Exec("UPDATE user SET balance = balance - ? WHERE id = ?", bonus.Points, id)
+	default:
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "could not update balance: %s", err)
+		return
+	}
 }
 
 func (s *Server) getUser(w http.ResponseWriter, req *http.Request) {
