@@ -24,7 +24,7 @@ const (
 	userEnvVar   = "DB_USER"
 	passEnvVar   = "DB_PASS"
 	dbNameEnvVar = "DB_NAME"
-	portNum      = "PORT_NUM"
+	port         = "PORT"
 )
 
 // Server represents а db server in social tournaments service.
@@ -60,7 +60,11 @@ func main() {
 
 	http.HandleFunc("/user", s.addUser)
 	http.HandleFunc("/user/", s.handler)
-	err = http.ListenAndServe(":"+os.Getenv(portNum), nil)
+	if os.Getenv(port) == "" {
+		log.Print("empty port")
+		return
+	}
+	err = http.ListenAndServe(":"+os.Getenv(port), nil)
 	if err != nil {
 		log.Print(err)
 		return
@@ -114,7 +118,10 @@ func (s *Server) handler(w http.ResponseWriter, req *http.Request) {
 		}
 		if req.Method == http.MethodDelete {
 			s.deleteUser(w, req)
+			return
 		}
+		http.NotFound(w, req)
+		return
 	default:
 		http.NotFound(w, req)
 		return
@@ -133,7 +140,7 @@ func (s *Server) processBonus(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "incorrect id: %s", err)
 		return
 	}
-	var bonus = struct {
+	bonus := struct {
 		Points int `json:"points"`
 	}{}
 	err = json.NewDecoder(req.Body).Decode(&bonus)
@@ -217,7 +224,7 @@ func (s *Server) deleteUser(w http.ResponseWriter, req *http.Request) {
 	delete, err := s.DB.Exec(`
 DELETE 
   FROM user
- WHERE id=?`, id)
+ WHERE id = ?`, id)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
