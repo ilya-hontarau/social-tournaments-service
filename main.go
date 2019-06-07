@@ -74,6 +74,7 @@ func main() {
 }
 
 func (s *Server) addUser(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	if req.Method != http.MethodPost {
 		http.NotFound(w, req)
 		return
@@ -129,6 +130,7 @@ func (s *Server) handler(w http.ResponseWriter, req *http.Request) {
 }
 
 func (s *Server) processBonus(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	if req.Method != http.MethodPost {
 		http.NotFound(w, req)
 		return
@@ -184,6 +186,7 @@ UPDATE user
 }
 
 func (s *Server) getUser(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	idIndex := strings.LastIndex(req.URL.Path, "/") // idIndex can't be -1
 	id, err := strconv.Atoi(req.URL.Path[idIndex+1:])
 	if err != nil {
