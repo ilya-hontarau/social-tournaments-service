@@ -24,6 +24,7 @@ const (
 	userEnvVar   = "DB_USER"
 	passEnvVar   = "DB_PASS"
 	dbNameEnvVar = "DB_NAME"
+	port         = "PORT"
 )
 
 // Server represents а db server in social tournaments service.
@@ -50,6 +51,12 @@ func NewServer() (*Server, error) {
 }
 
 func main() {
+	portNum := os.Getenv(port)
+	if portNum == "" {
+		log.Printf(`no "%s" env variable`, port)
+		return
+	}
+
 	s, err := NewServer()
 	if err != nil {
 		log.Print(err)
@@ -59,7 +66,7 @@ func main() {
 
 	http.HandleFunc("/user", s.addUser)
 	http.HandleFunc("/user/", s.handler)
-	err = http.ListenAndServe(":9000", nil)
+	err = http.ListenAndServe(":"+portNum, nil)
 	if err != nil {
 		log.Print(err)
 		return
@@ -103,15 +110,22 @@ func (s *Server) addUser(w http.ResponseWriter, req *http.Request) {
 }
 
 func (s *Server) handler(w http.ResponseWriter, req *http.Request) {
-	switch strings.Count(req.URL.Path, "/") { // count slash
+	switch strings.Count(req.URL.Path, "/") {
 	case 3:
 		s.processBonus(w, req)
-	case 2:
-		s.getUser(w, req)
-	default:
-		http.NotFound(w, req)
 		return
+	case 2:
+		if req.Method == http.MethodGet {
+			s.getUser(w, req)
+			return
+		}
+		if req.Method == http.MethodDelete {
+			s.deleteUser(w, req)
+			return
+		}
 	}
+	http.NotFound(w, req)
+	return
 }
 
 func (s *Server) processBonus(w http.ResponseWriter, req *http.Request) {
@@ -126,10 +140,9 @@ func (s *Server) processBonus(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "incorrect id: %s", err)
 		return
 	}
-	type Bonus struct {
+	bonus := struct {
 		Points int `json:"points"`
-	}
-	var bonus Bonus
+	}{}
 	err = json.NewDecoder(req.Body).Decode(&bonus)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -148,7 +161,7 @@ UPDATE user
 		update, err = s.DB.Exec(`
 UPDATE user 
    SET balance = balance - ? 
- WHERE id = ?`, bonus.Points, id) // add additional check
+ WHERE id = ?`, bonus.Points, id)
 	default:
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -171,10 +184,6 @@ UPDATE user
 }
 
 func (s *Server) getUser(w http.ResponseWriter, req *http.Request) {
-	if req.Method != http.MethodGet {
-		http.NotFound(w, req)
-		return
-	}
 	idIndex := strings.LastIndex(req.URL.Path, "/") // idIndex can't be -1
 	id, err := strconv.Atoi(req.URL.Path[idIndex+1:])
 	if err != nil {
@@ -184,7 +193,7 @@ func (s *Server) getUser(w http.ResponseWriter, req *http.Request) {
 	}
 	var user User
 	err = s.DB.QueryRow(`
-SELECT id, name,balance 
+SELECT id, name, balance 
   FROM user 
  WHERE id = ?`, id).
 		Scan(&user.ID, &user.Name, &user.Balance)
@@ -200,6 +209,33 @@ SELECT id, name,balance
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "can't encode json: %s\n", err)
+		return
+	}
+}
+
+func (s *Server) deleteUser(w http.ResponseWriter, req *http.Request) {
+	idIndex := strings.LastIndex(req.URL.Path, "/") // idIndex can't be -1
+	id, err := strconv.Atoi(req.URL.Path[idIndex+1:])
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, "incorrect id: %s", err)
+		return
+	}
+	delete, err := s.DB.Exec(`
+DELETE 
+  FROM user
+ WHERE id = ?`, id)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	rows, err := delete.RowsAffected()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if rows == 0 {
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 }
