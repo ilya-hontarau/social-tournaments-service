@@ -74,7 +74,6 @@ func main() {
 }
 
 func (s *Server) addUser(w http.ResponseWriter, req *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	if req.Method != http.MethodPost {
 		http.NotFound(w, req)
 		return
@@ -107,6 +106,7 @@ func (s *Server) addUser(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "can't encode json: %s\n", err)
 		return
 	}
+	w.Header().Set("Content-Type", "application/json")
 
 }
 
@@ -130,7 +130,6 @@ func (s *Server) handler(w http.ResponseWriter, req *http.Request) {
 }
 
 func (s *Server) processBonus(w http.ResponseWriter, req *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	if req.Method != http.MethodPost {
 		http.NotFound(w, req)
 		return
@@ -183,10 +182,10 @@ UPDATE user
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
+	w.Header().Set("Content-Type", "application/json")
 }
 
 func (s *Server) getUser(w http.ResponseWriter, req *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	idIndex := strings.LastIndex(req.URL.Path, "/") // idIndex can't be -1
 	id, err := strconv.Atoi(req.URL.Path[idIndex+1:])
 	if err != nil {
@@ -214,6 +213,7 @@ SELECT id, name, balance
 		fmt.Fprintf(w, "can't encode json: %s\n", err)
 		return
 	}
+	w.Header().Set("Content-Type", "application/json")
 }
 
 func (s *Server) deleteUser(w http.ResponseWriter, req *http.Request) {
