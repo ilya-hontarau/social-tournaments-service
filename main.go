@@ -51,6 +51,12 @@ func NewServer() (*Server, error) {
 }
 
 func main() {
+	portNum := os.Getenv(port)
+	if portNum == "" {
+		log.Print("empty port")
+		return
+	}
+
 	s, err := NewServer()
 	if err != nil {
 		log.Print(err)
@@ -60,11 +66,7 @@ func main() {
 
 	http.HandleFunc("/user", s.addUser)
 	http.HandleFunc("/user/", s.handler)
-	if os.Getenv(port) == "" {
-		log.Print("empty port")
-		return
-	}
-	err = http.ListenAndServe(":"+os.Getenv(port), nil)
+	err = http.ListenAndServe(":"+portNum, nil)
 	if err != nil {
 		log.Print(err)
 		return
@@ -111,6 +113,7 @@ func (s *Server) handler(w http.ResponseWriter, req *http.Request) {
 	switch strings.Count(req.URL.Path, "/") {
 	case 3:
 		s.processBonus(w, req)
+		return
 	case 2:
 		if req.Method == http.MethodGet {
 			s.getUser(w, req)
@@ -120,12 +123,9 @@ func (s *Server) handler(w http.ResponseWriter, req *http.Request) {
 			s.deleteUser(w, req)
 			return
 		}
-		http.NotFound(w, req)
-		return
-	default:
-		http.NotFound(w, req)
-		return
 	}
+	http.NotFound(w, req)
+	return
 }
 
 func (s *Server) processBonus(w http.ResponseWriter, req *http.Request) {
