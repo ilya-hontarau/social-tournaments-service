@@ -53,7 +53,7 @@ func NewServer() (*Server, error) {
 func main() {
 	portNum := os.Getenv(port)
 	if portNum == "" {
-		log.Print("empty port")
+		log.Printf(`no "%s" env variable`, port)
 		return
 	}
 
