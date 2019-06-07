@@ -207,13 +207,14 @@ SELECT id, name, balance
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(user)
 	if err != nil {
+		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "can't encode json: %s\n", err)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
 }
 
 func (s *Server) deleteUser(w http.ResponseWriter, req *http.Request) {
