@@ -85,7 +85,7 @@ func (s *Server) addUser(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "cannot decode json: %s", err)
 		return
 	}
-	insert, err := s.DB.Exec("INSERT INTO user(name,balance) VALUES(?,?)", user.Name, 0)
+	insert, err := s.DB.ExecContext(req.Context(), "INSERT INTO user(name,balance) VALUES(?,?)", user.Name, 0)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "could not add user: %s", err)
@@ -154,12 +154,12 @@ func (s *Server) processBonus(w http.ResponseWriter, req *http.Request) {
 
 	switch strings.Split(req.URL.Path, "/")[3] {
 	case "fund":
-		update, err = s.DB.Exec(`
+		update, err = s.DB.ExecContext(req.Context(), `
 UPDATE user 
    SET balance = balance + ? 
  WHERE id = ?`, bonus.Points, id)
 	case "take":
-		update, err = s.DB.Exec(`
+		update, err = s.DB.ExecContext(req.Context(), `
 UPDATE user 
    SET balance = balance - ? 
  WHERE id = ?`, bonus.Points, id)
@@ -194,7 +194,7 @@ func (s *Server) getUser(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	var user User
-	err = s.DB.QueryRow(`
+	err = s.DB.QueryRowContext(req.Context(), `
 SELECT id, name, balance 
   FROM user 
  WHERE id = ?`, id).
@@ -225,7 +225,7 @@ func (s *Server) deleteUser(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "incorrect id: %s", err)
 		return
 	}
-	delete, err := s.DB.Exec(`
+	delete, err := s.DB.ExecContext(req.Context(), `
 DELETE 
   FROM user
  WHERE id = ?`, id)
