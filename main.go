@@ -96,18 +96,18 @@ func (s *Server) addUser(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(struct {
 		ID int64 `json:"id"`
 	}{
 		ID: user.ID,
 	})
 	if err != nil {
+		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "can't encode json: %s\n", err)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-
 }
 
 func (s *Server) handler(w http.ResponseWriter, req *http.Request) {
