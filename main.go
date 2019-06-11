@@ -65,7 +65,7 @@ func main() {
 	defer s.DB.Close()
 
 	http.HandleFunc("/user", s.addUser)
-	http.HandleFunc("/user/", s.handler)
+	http.HandleFunc("/user/", s.switchHandler)
 	err = http.ListenAndServe(":"+portNum, nil)
 	if err != nil {
 		log.Print(err)
@@ -110,7 +110,7 @@ func (s *Server) addUser(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (s *Server) handler(w http.ResponseWriter, req *http.Request) {
+func (s *Server) switchHandler(w http.ResponseWriter, req *http.Request) {
 	switch strings.Count(req.URL.Path, "/") {
 	case 3:
 		s.processBonus(w, req)
