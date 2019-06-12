@@ -8,7 +8,8 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
+
+	"github.com/gorilla/mux"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -27,8 +28,9 @@ const (
 	port         = "PORT"
 )
 
-// Server represents а db server in social tournaments service.
+// Server represents а server in social tournaments service.
 type Server struct {
+	http.Handler
 	DB *sql.DB
 }
 
@@ -47,7 +49,16 @@ func NewServer() (*Server, error) {
 	if err != nil {
 		return nil, fmt.Errorf("can't open db: %s", err)
 	}
-	return &Server{DB: db}, nil
+	r := mux.NewRouter()
+	s := Server{
+		DB:      db,
+		Handler: r,
+	}
+	r.HandleFunc("/user", s.addUser).Methods("POST")
+	r.HandleFunc("/user/{id:[1-9]+[0-9]*}", s.getUser).Methods("GET")
+	r.HandleFunc("/user/{id:[1-9]+[0-9]*}", s.deleteUser).Methods("DELETE")
+	r.HandleFunc("/user/{id:[1-9]+[0-9]*}/{category}", s.processBonus).Methods("POST")
+	return &s, nil
 }
 
 func main() {
@@ -64,9 +75,7 @@ func main() {
 	}
 	defer s.DB.Close()
 
-	http.HandleFunc("/user", s.addUser)
-	http.HandleFunc("/user/", s.switchHandler)
-	err = http.ListenAndServe(":"+portNum, nil)
+	err = http.ListenAndServe(":"+portNum, s)
 	if err != nil {
 		log.Print(err)
 		return
@@ -74,10 +83,6 @@ func main() {
 }
 
 func (s *Server) addUser(w http.ResponseWriter, req *http.Request) {
-	if req.Method != http.MethodPost {
-		http.NotFound(w, req)
-		return
-	}
 	var user User
 	err := json.NewDecoder(req.Body).Decode(&user)
 	if err != nil {
@@ -85,7 +90,10 @@ func (s *Server) addUser(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "cannot decode json: %s", err)
 		return
 	}
-	insert, err := s.DB.ExecContext(req.Context(), "INSERT INTO user(name,balance) VALUES(?,?)", user.Name, 0)
+	insert, err := s.DB.ExecContext(req.Context(), `
+ INSERT INTO user (name, balance) 
+VALUES (?, ?)`,
+		user.Name, 0)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "could not add user: %s", err)
@@ -110,32 +118,14 @@ func (s *Server) addUser(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (s *Server) switchHandler(w http.ResponseWriter, req *http.Request) {
-	switch strings.Count(req.URL.Path, "/") {
-	case 3:
-		s.processBonus(w, req)
-		return
-	case 2:
-		if req.Method == http.MethodGet {
-			s.getUser(w, req)
-			return
-		}
-		if req.Method == http.MethodDelete {
-			s.deleteUser(w, req)
-			return
-		}
-	}
-	http.NotFound(w, req)
-	return
-}
-
 func (s *Server) processBonus(w http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
 		http.NotFound(w, req)
 		return
 	}
+	vars := mux.Vars(req)
 
-	id, err := strconv.Atoi((strings.Split(req.URL.Path, "/"))[2])
+	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintf(w, "incorrect id: %s", err)
@@ -152,7 +142,7 @@ func (s *Server) processBonus(w http.ResponseWriter, req *http.Request) {
 	}
 	var update sql.Result
 
-	switch strings.Split(req.URL.Path, "/")[3] {
+	switch vars["category"] {
 	case "fund":
 		update, err = s.DB.ExecContext(req.Context(), `
 UPDATE user 
@@ -186,8 +176,8 @@ UPDATE user
 }
 
 func (s *Server) getUser(w http.ResponseWriter, req *http.Request) {
-	idIndex := strings.LastIndex(req.URL.Path, "/") // idIndex can't be -1
-	id, err := strconv.Atoi(req.URL.Path[idIndex+1:])
+	vars := mux.Vars(req)
+	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintf(w, "incorrect id: %s", err)
@@ -218,8 +208,8 @@ SELECT id, name, balance
 }
 
 func (s *Server) deleteUser(w http.ResponseWriter, req *http.Request) {
-	idIndex := strings.LastIndex(req.URL.Path, "/") // idIndex can't be -1
-	id, err := strconv.Atoi(req.URL.Path[idIndex+1:])
+	vars := mux.Vars(req)
+	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintf(w, "incorrect id: %s", err)
