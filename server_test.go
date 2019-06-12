@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -17,22 +18,38 @@ func TestAddUser(t *testing.T) {
 		response string
 		status   int
 	}{
-		{name: "correct test", method: http.MethodPost, request: `{ "name" : "ilya" }`, response: `{"id":1}`, status: http.StatusOK},
-		{name: "incorrect request", method: http.MethodPost, request: `{  : "i" }`, response: `{"id":1}`, status: http.StatusBadRequest},
-		{name: "incorrect method", method: http.MethodPatch, request: `{ "name" : "ilya" }`, response: `{"id":1}`, status: http.StatusNotFound},
+		{
+			name:     "correct test",
+			method:   http.MethodPost,
+			request:  `{ "name" : "ilya" }`,
+			response: `{"id":1}`,
+			status:   http.StatusOK,
+		},
+		{
+			name:     "incorrect request",
+			method:   http.MethodPost,
+			request:  `{  : "i" }`,
+			response: `{"id":1}`,
+			status:   http.StatusBadRequest,
+		},
+		{name: "incorrect method",
+			method:   http.MethodPatch,
+			request:  `{ "name" : "ilya" }`,
+			response: `{"id":1}`,
+			status:   http.StatusNotFound,
+		},
 	}
-
+	s, err := NewServer()
+	if err != nil {
+		t.Fatalf("couldn't create db connection: %v", err)
+	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			req, err := http.NewRequest(tc.method, "localhost:9000/user", bytes.NewBuffer([]byte(tc.request)))
+			req, err := http.NewRequest(tc.method, "localhost:9000/user", strings.NewReader(tc.request))
 			if err != nil {
 				t.Fatalf("could not create request: %v", err)
 			}
 			rec := httptest.NewRecorder()
-			s, err := NewServer()
-			if err != nil {
-				t.Fatalf("couldn't create db connection: %v", err)
-			}
 			s.addUser(rec, req)
 			res := rec.Result()
 			defer res.Body.Close()
@@ -40,14 +57,13 @@ func TestAddUser(t *testing.T) {
 			if err != nil {
 				t.Fatalf("could not read response: %v", err)
 			}
-			if tc.status != http.StatusOK {
-				if tc.status != res.StatusCode {
-					t.Errorf("expected status %v; got %v", tc.status, res.StatusCode)
-				}
-				return
+			if tc.status != res.StatusCode {
+				t.Fatalf("expected status %v; got %v", tc.status, res.StatusCode)
 			}
-			if sol := string(bytes.TrimSpace(b)); tc.response != sol {
-				t.Errorf("expected %s, got %s", tc.response, sol)
+			if tc.status == http.StatusOK {
+				if respBody := string(bytes.TrimSpace(b)); tc.response != respBody {
+					t.Fatalf("expected %s, got %s", tc.response, respBody)
+				}
 			}
 		})
 	}
@@ -60,9 +76,26 @@ func TestGetUser(t *testing.T) {
 		response string
 		status   int
 	}{
-		{name: "correct test", id: "1", response: `{"id":1,"name":"ilya","balance":0}`, status: http.StatusOK},
-		{name: "incorrect id", id: "ahoi", status: http.StatusBadRequest},
-		{name: "uncreated account", id: "1000", status: http.StatusNotFound},
+		{
+			name:     "correct test",
+			id:       "1",
+			response: `{"id":1,"name":"ilya","balance":0}`,
+			status:   http.StatusOK,
+		},
+		{
+			name:   "incorrect id",
+			id:     "ahoi",
+			status: http.StatusBadRequest,
+		},
+		{
+			name:   "uncreated account",
+			id:     "1000",
+			status: http.StatusNotFound,
+		},
+	}
+	s, err := NewServer()
+	if err != nil {
+		t.Fatalf("couldn't create db connection: %v", err)
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
@@ -71,10 +104,6 @@ func TestGetUser(t *testing.T) {
 				t.Fatalf("could not create request: %v", err)
 			}
 			rec := httptest.NewRecorder()
-			s, err := NewServer()
-			if err != nil {
-				t.Fatalf("couldn't create db connection: %v", err)
-			}
 			s.getUser(rec, req)
 			res := rec.Result()
 			defer res.Body.Close()
@@ -82,15 +111,13 @@ func TestGetUser(t *testing.T) {
 			if err != nil {
 				t.Fatalf("could not read response: %v", err)
 			}
-			if tc.status != http.StatusOK {
-				if tc.status != res.StatusCode {
-					t.Errorf("expected status %v; got %v", tc.status, res.StatusCode)
-				}
-				return
+			if tc.status != res.StatusCode {
+				t.Fatalf("expected status %v; got %v", tc.status, res.StatusCode)
 			}
-
-			if sol := string(bytes.TrimSpace(b)); tc.response != sol {
-				t.Errorf("expected %s, got %s", tc.response, sol)
+			if tc.status == http.StatusOK {
+				if respBody := string(bytes.TrimSpace(b)); tc.response != respBody {
+					t.Fatalf("expected %s, got %s", tc.response, respBody)
+				}
 			}
 
 		})
@@ -104,29 +131,41 @@ func TestFund(t *testing.T) {
 		request string
 		status  int
 	}{
-		{name: "correct test", id: "1", request: `{ "points" : 7 }`, status: http.StatusOK},
-		{name: "empty id", request: `{ "points" :​ 300 }`, status: http.StatusBadRequest},
-		{name: "incorrect json", request: `{ "name" : "max" }`, status: http.StatusBadRequest},
+		{
+			name:    "correct test",
+			id:      "1",
+			request: `{ "points" : 7 }`,
+			status:  http.StatusOK},
+		{
+			name:    "empty id",
+			request: `{ "points" :​ 300 }`,
+			status:  http.StatusBadRequest,
+		},
+		{
+			name:    "incorrect json",
+			request: `{ "name" : "max" }`,
+			status:  http.StatusBadRequest,
+		},
+	}
+	s, err := NewServer()
+	if err != nil {
+		t.Fatalf("couldn't create db connection: %v", err)
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			req, err := http.NewRequest("POST", fmt.Sprintf("http://localhost:9000/user/%s/fund", tc.id), bytes.NewBuffer([]byte(tc.request)))
+			req, err := http.NewRequest("POST", fmt.Sprintf("http://localhost:9000/user/%s/fund", tc.id),
+				strings.NewReader(tc.request))
 			if err != nil {
 				t.Fatalf("could not create request: %v", err)
 			}
 			rec := httptest.NewRecorder()
-			s, err := NewServer()
-			if err != nil {
-				t.Fatalf("couldn't create db connection: %v", err)
-			}
 			s.processBonus(rec, req)
 			res := rec.Result()
 			if err != nil {
 				t.Fatalf("could not read response: %v", err)
 			}
 			if tc.status != res.StatusCode {
-				t.Errorf("expected status %v; got %v", tc.status, res.StatusCode)
-				return
+				t.Fatalf("expected status %v; got %v", tc.status, res.StatusCode)
 			}
 		})
 	}
@@ -139,30 +178,50 @@ func TestTake(t *testing.T) {
 		request string
 		status  int
 	}{
-		{name: "correct test", id: "1", request: `{ "points" : 7 }`, status: http.StatusOK},
-		{name: "empty id", request: `{"points":​300}`, status: http.StatusBadRequest},
-		{name: "uncreated account", id: "1000", request: `{ "points" : 7 }`, status: http.StatusNotFound},
-		{name: "incorrect bonus request", id: "1", request: `{ "points" : 7000 }`, status: http.StatusInternalServerError},
+		{
+			name:    "correct test",
+			id:      "1",
+			request: `{ "points" : 7 }`,
+			status:  http.StatusOK,
+		},
+		{
+			name:    "empty id",
+			request: `{"points":​300}`,
+			status:  http.StatusBadRequest,
+		},
+		{
+			name:    "uncreated account",
+			id:      "1000",
+			request: `{ "points" : 7 }`,
+			status:  http.StatusNotFound,
+		},
+		{
+			name:    "incorrect bonus request",
+			id:      "1",
+			request: `{ "points" : 7000 }`,
+			status:  http.StatusInternalServerError,
+		},
+	}
+	s, err := NewServer()
+	if err != nil {
+		t.Fatalf("couldn't create db connection: %v", err)
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			req, err := http.NewRequest("POST", fmt.Sprintf("http://localhost:9000/user/%s/take", tc.id), bytes.NewBuffer([]byte(tc.request)))
+			req, err := http.NewRequest("POST", fmt.Sprintf("http://localhost:9000/user/%s/take", tc.id),
+				strings.NewReader(tc.request))
 			if err != nil {
 				t.Fatalf("could not create request: %v", err)
 			}
 			rec := httptest.NewRecorder()
-			s, err := NewServer()
-			if err != nil {
-				t.Fatalf("couldn't create db connection: %v", err)
-			}
 			s.processBonus(rec, req)
 			res := rec.Result()
 			if err != nil {
 				t.Fatalf("could not read response: %v", err)
 			}
 			if tc.status != res.StatusCode {
-				t.Errorf("expected status %v; got %v", tc.status, res.StatusCode)
-				return
+				t.Fatalf("expected status %v; got %v", tc.status, res.StatusCode)
+
 			}
 		})
 	}
@@ -174,9 +233,25 @@ func TestDeleteUser(t *testing.T) {
 		id     string
 		status int
 	}{
-		{name: "correct test", id: "1", status: http.StatusOK},
-		{name: "incorrect id", id: "ahoi", status: http.StatusBadRequest},
-		{name: "uncreated user", id: "100", status: http.StatusNotFound},
+		{
+			name:   "correct test",
+			id:     "1",
+			status: http.StatusOK,
+		},
+		{
+			name:   "incorrect id",
+			id:     "ahoi",
+			status: http.StatusBadRequest,
+		},
+		{
+			name:   "uncreated user",
+			id:     "100",
+			status: http.StatusNotFound,
+		},
+	}
+	s, err := NewServer()
+	if err != nil {
+		t.Fatalf("couldn't create db connection: %v", err)
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
@@ -185,10 +260,6 @@ func TestDeleteUser(t *testing.T) {
 				t.Fatalf("could not create request: %v", err)
 			}
 			rec := httptest.NewRecorder()
-			s, err := NewServer()
-			if err != nil {
-				t.Fatalf("couldn't create db connection: %v", err)
-			}
 			s.deleteUser(rec, req)
 			res := rec.Result()
 			if tc.status != res.StatusCode {
@@ -208,24 +279,56 @@ func TestHandler(t *testing.T) {
 		request string
 		status  int
 	}{
-		{name: "empty url", method: "POST", status: http.StatusNotFound},
-		{name: "incorrect method - process bonus", url: "/user/1/fund", method: http.MethodDelete, status: http.StatusNotFound},
-		{name: "incorrect request - process bonus", url: "/user/1/fund", method: http.MethodPost, request: "empty req", status: http.StatusBadRequest},
-		{name: "incorrect url - process bonus", url: "/user/666/fud", method: http.MethodPost, request: `{ "points" : 7 }`, status: http.StatusNotFound},
-		{name: "get user incorrect id", url: "/user/ahoi", method: http.MethodGet, status: http.StatusBadRequest},
-		{name: "delete user incorrect id", url: "/user/ahoi", method: http.MethodDelete, status: http.StatusBadRequest},
+		{
+			name:   "empty url",
+			method: "POST",
+			status: http.StatusNotFound,
+		},
+		{
+			name:   "incorrect method - process bonus",
+			url:    "/user/1/fund",
+			method: http.MethodDelete,
+			status: http.StatusNotFound,
+		},
+		{
+			name:    "incorrect request - process bonus",
+			url:     "/user/1/fund",
+			method:  http.MethodPost,
+			request: "empty req",
+			status:  http.StatusBadRequest,
+		},
+		{
+			name:    "incorrect url - process bonus",
+			url:     "/user/666/fud",
+			method:  http.MethodPost,
+			request: `{ "points" : 7 }`,
+			status:  http.StatusNotFound,
+		},
+		{
+			name:   "get user incorrect id",
+			url:    "/user/ahoi",
+			method: http.MethodGet,
+			status: http.StatusBadRequest,
+		},
+		{
+			name:   "delete user incorrect id",
+			url:    "/user/ahoi",
+			method: http.MethodDelete,
+			status: http.StatusBadRequest,
+		},
+	}
+	s, err := NewServer()
+	if err != nil {
+		t.Fatalf("couldn't create db connection: %v", err)
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			req, err := http.NewRequest(tc.method, "http://localhost:9000"+tc.url, bytes.NewBuffer([]byte(tc.request)))
+			req, err := http.NewRequest(tc.method, "http://localhost:9000"+tc.url,
+				strings.NewReader(tc.request))
 			if err != nil {
 				t.Fatalf("could not create request: %v", err)
 			}
 			rec := httptest.NewRecorder()
-			s, err := NewServer()
-			if err != nil {
-				t.Fatalf("couldn't create db connection: %v", err)
-			}
 			s.switchHandler(rec, req)
 			res := rec.Result()
 			if tc.status != res.StatusCode {
