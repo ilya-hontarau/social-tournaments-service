@@ -26,18 +26,16 @@ func TestAddUser(t *testing.T) {
 			status:   http.StatusOK,
 		},
 		{
-			name:     "incorrect request",
-			method:   http.MethodPost,
-			request:  `{  : "i" }`,
-			response: `{"id":1}`,
-			status:   http.StatusBadRequest,
+			name:    "incorrect request",
+			method:  http.MethodPost,
+			request: `{  : "i" }`,
+			status:  http.StatusBadRequest,
 		},
 		{
-			name:     "incorrect method",
-			method:   http.MethodPatch,
-			request:  `{ "name" : "ilya" }`,
-			response: `{"id":1}`,
-			status:   http.StatusNotFound,
+			name:    "incorrect method",
+			method:  http.MethodPatch,
+			request: `{ "name" : "ilya" }`,
+			status:  http.StatusNotFound,
 		},
 	}
 	s, err := NewServer()
