@@ -32,7 +32,8 @@ func TestAddUser(t *testing.T) {
 			response: `{"id":1}`,
 			status:   http.StatusBadRequest,
 		},
-		{name: "incorrect method",
+		{
+			name:     "incorrect method",
 			method:   http.MethodPatch,
 			request:  `{ "name" : "ilya" }`,
 			response: `{"id":1}`,
@@ -43,6 +44,7 @@ func TestAddUser(t *testing.T) {
 	if err != nil {
 		t.Fatalf("couldn't create db connection: %v", err)
 	}
+	defer s.DB.Close()
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			req, err := http.NewRequest(tc.method, "localhost:9000/user", strings.NewReader(tc.request))
@@ -97,6 +99,7 @@ func TestGetUser(t *testing.T) {
 	if err != nil {
 		t.Fatalf("couldn't create db connection: %v", err)
 	}
+	defer s.DB.Close()
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			req, err := http.NewRequest("GET", "http://localhost:9000/user/"+tc.id, nil)
@@ -151,6 +154,7 @@ func TestFund(t *testing.T) {
 	if err != nil {
 		t.Fatalf("couldn't create db connection: %v", err)
 	}
+	defer s.DB.Close()
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			req, err := http.NewRequest("POST", fmt.Sprintf("http://localhost:9000/user/%s/fund", tc.id),
@@ -206,6 +210,7 @@ func TestTake(t *testing.T) {
 	if err != nil {
 		t.Fatalf("couldn't create db connection: %v", err)
 	}
+	defer s.DB.Close()
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			req, err := http.NewRequest("POST", fmt.Sprintf("http://localhost:9000/user/%s/take", tc.id),
@@ -253,6 +258,7 @@ func TestDeleteUser(t *testing.T) {
 	if err != nil {
 		t.Fatalf("couldn't create db connection: %v", err)
 	}
+	defer s.DB.Close()
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			req, err := http.NewRequest("DELETE", "http://localhost:9000/user/"+tc.id, nil)
@@ -321,6 +327,7 @@ func TestHandler(t *testing.T) {
 	if err != nil {
 		t.Fatalf("couldn't create db connection: %v", err)
 	}
+	defer s.DB.Close()
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			req, err := http.NewRequest(tc.method, "http://localhost:9000"+tc.url,
