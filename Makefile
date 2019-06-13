@@ -8,9 +8,8 @@ dep:
 
 .PHONY: test
 test:
-	go test ./... -v -coverprofile=cover.out
+	go test -v -coverprofile=cover.out ./...
 
 .PHONY: lint
 lint:
 	golangci-lint run
-	
