@@ -10,8 +10,6 @@ import (
 	"testing"
 )
 
-//TODO: add content type
-
 func TestAddUser(t *testing.T) {
 	tt := []struct {
 		name        string
