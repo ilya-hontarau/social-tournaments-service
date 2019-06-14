@@ -4,7 +4,7 @@
      deposit INT(10) UNSIGNED NOT NULL,
      prize INT(10) UNSIGNED NOT NULL,
      finished BOOL DEFAULT false,
-     winner INT,/*add for key*/
+     winner INT,
      FOREIGN KEY(winner) REFERENCES users(id),
      PRIMARY KEY(id)
 );
