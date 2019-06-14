@@ -21,6 +21,7 @@ type User struct {
 	Balance uint   `json:"balance"`
 }
 
+// Tournament represents a tournament in a social tournaments service.
 type Tournament struct {
 	ID      int64   `json:"id"`
 	Name    string  `json:"name"`
