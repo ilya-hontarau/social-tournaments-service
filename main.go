@@ -21,6 +21,15 @@ type User struct {
 	Balance uint   `json:"balance"`
 }
 
+type Tournament struct {
+	ID      int64   `json:"id"`
+	Name    string  `json:"name"`
+	Deposit int64   `json:"deposit"`
+	Prize   int64   `json:"prize"`
+	Winner  int64   `json:"winner"`
+	Users   []int64 `json:"users"`
+}
+
 const (
 	userEnvVar   = "DB_USER"
 	passEnvVar   = "DB_PASS"
@@ -58,6 +67,7 @@ func NewServer() (*Server, error) {
 	r.HandleFunc("/user/{id:[1-9]+[0-9]*}", s.getUser).Methods("GET")
 	r.HandleFunc("/user/{id:[1-9]+[0-9]*}", s.deleteUser).Methods("DELETE")
 	r.HandleFunc("/user/{id:[1-9]+[0-9]*}/{category}", s.processBonus).Methods("POST")
+	r.HandleFunc("/tournament", s.addTournament).Methods("POST")
 	return &s, nil
 }
 
@@ -91,7 +101,7 @@ func (s *Server) addUser(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	insert, err := s.DB.ExecContext(req.Context(), `
- INSERT INTO user (name, balance) 
+ INSERT INTO users (name, balance) 
 VALUES (?, ?)`,
 		user.Name, 0)
 	if err != nil {
@@ -145,12 +155,12 @@ func (s *Server) processBonus(w http.ResponseWriter, req *http.Request) {
 	switch vars["category"] {
 	case "fund":
 		update, err = s.DB.ExecContext(req.Context(), `
-UPDATE user 
+UPDATE users 
    SET balance = balance + ? 
  WHERE id = ?`, bonus.Points, id)
 	case "take":
 		update, err = s.DB.ExecContext(req.Context(), `
-UPDATE user 
+UPDATE users 
    SET balance = balance - ? 
  WHERE id = ?`, bonus.Points, id)
 	default:
@@ -186,7 +196,7 @@ func (s *Server) getUser(w http.ResponseWriter, req *http.Request) {
 	var user User
 	err = s.DB.QueryRowContext(req.Context(), `
 SELECT id, name, balance 
-  FROM user 
+  FROM users 
  WHERE id = ?`, id).
 		Scan(&user.ID, &user.Name, &user.Balance)
 	if err == sql.ErrNoRows {
@@ -217,7 +227,7 @@ func (s *Server) deleteUser(w http.ResponseWriter, req *http.Request) {
 	}
 	delete, err := s.DB.ExecContext(req.Context(), `
 DELETE 
-  FROM user
+  FROM users
  WHERE id = ?`, id)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -230,6 +240,42 @@ DELETE
 	}
 	if rows == 0 {
 		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+}
+
+func (s *Server) addTournament(w http.ResponseWriter, req *http.Request) {
+	var t Tournament
+	err := json.NewDecoder(req.Body).Decode(&t)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, "cannot decode json: %s", err)
+		return
+	}
+	insert, err := s.DB.ExecContext(req.Context(), `
+ INSERT INTO tournaments (name,deposit)
+VALUES (?,?)`,
+		t.Name, t.Deposit)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "could not add user: %s", err)
+		return
+	}
+	t.ID, err = insert.LastInsertId()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(struct {
+		ID int64 `json:"id"`
+	}{
+		ID: t.ID,
+	})
+	if err != nil {
+		w.Header().Set("Content-Type", "text/plain")
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "can't encode json: %s\n", err)
 		return
 	}
 }

@@ -324,3 +324,80 @@ func TestDeleteUser(t *testing.T) {
 		})
 	}
 }
+
+func TestTournament(t *testing.T) {
+	tt := []struct {
+		name        string
+		method      string
+		request     string
+		response    string
+		status      int
+		contentType string
+	}{
+		{
+			name:        "correct test",
+			method:      http.MethodPost,
+			request:     `{"name": "poker","deposit": 1000}`,
+			response:    `{"id":1}`,
+			status:      http.StatusOK,
+			contentType: "application/json",
+		},
+		{
+			name:        "incorrect request",
+			method:      http.MethodPost,
+			request:     `{  :  }`,
+			status:      http.StatusBadRequest,
+			contentType: "text/plain; charset=utf-8",
+		},
+		{
+			name:        "incorrect deposit",
+			method:      http.MethodPost,
+			request:     `{"name": "football","deposit": -1000}`,
+			status:      http.StatusInternalServerError,
+			contentType: "text/plain; charset=utf-8",
+		},
+		{
+			name:    "incorrect method",
+			method:  http.MethodPatch,
+			request: `{"name": "football","deposit": 1000}`,
+			status:  http.StatusMethodNotAllowed,
+		},
+	}
+	s, err := NewServer()
+	if err != nil {
+		t.Fatalf("couldn't create db connection: %v", err)
+	}
+	defer s.DB.Close()
+
+	server := httptest.NewServer(s)
+	defer server.Close()
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			req, err := http.NewRequest(tc.method, fmt.Sprintf("%s/tournament", server.URL),
+				strings.NewReader(tc.request))
+			if err != nil {
+				t.Fatalf("could not create request: %v", err)
+			}
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				t.Fatalf("couldnt get response: %s", err)
+			}
+			defer resp.Body.Close()
+			b, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				t.Fatalf("could not read response: %v", err)
+			}
+			if tc.status != resp.StatusCode {
+				t.Fatalf("expected status %v; got %v", tc.status, resp.StatusCode)
+			}
+			if contentType := strings.Join(resp.Header["Content-Type"], ""); tc.contentType != contentType {
+				t.Fatalf("expected status %v; got %v", tc.contentType, contentType)
+			}
+			if tc.status == http.StatusOK {
+				if respBody := string(bytes.TrimSpace(b)); tc.response != respBody {
+					t.Fatalf("expected %s, got %s", tc.response, respBody)
+				}
+			}
+		})
+	}
+}
