@@ -24,8 +24,17 @@ inters-settings:
 linters:
   enable-all: true
   disable:
-    - maligned
     - gochecknoglobals
     - gochecknoinits
-    - unconvert
-    - scopelint
+
+issues:
+  # Excluding configuration per-path, per-linter, per-text and per-source
+  exclude-rules:
+    # Exclude some linters from running on tests files.
+    - path: _test\.go
+      linters:
+        - gocyclo
+        - errcheck
+        - dupl
+        - gosec
+        - scopelint
