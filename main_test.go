@@ -67,7 +67,7 @@ func TestAddUser(t *testing.T) {
 			if tc.status != resp.StatusCode {
 				t.Fatalf("expected status %v; got %v", tc.status, resp.StatusCode)
 			}
-			if contentType := strings.Join(resp.Header["Content-Type"], ""); tc.contentType != contentType {
+			if contentType := resp.Header.Get("Content-Type"); tc.contentType != contentType {
 				t.Fatalf("expected status %v; got %v", tc.contentType, contentType)
 			}
 			if tc.status == http.StatusOK {
@@ -132,7 +132,7 @@ func TestGetUser(t *testing.T) {
 			if tc.status != resp.StatusCode {
 				t.Fatalf("expected status %v; got %v", tc.status, resp.StatusCode)
 			}
-			if contentType := strings.Join(resp.Header["Content-Type"], ""); tc.contentType != contentType {
+			if contentType := resp.Header.Get("Content-Type"); tc.contentType != contentType {
 				t.Fatalf("expected status %v; got %v", tc.contentType, contentType)
 			}
 			if tc.status == http.StatusOK {
@@ -196,7 +196,7 @@ func TestFund(t *testing.T) {
 			if tc.status != resp.StatusCode {
 				t.Fatalf("expected status %v; got %v", tc.status, resp.StatusCode)
 			}
-			if contentType := strings.Join(resp.Header["Content-Type"], ""); tc.contentType != contentType {
+			if contentType := resp.Header.Get("Content-Type"); tc.contentType != contentType {
 				t.Fatalf("expected status %v; got %v", tc.contentType, contentType)
 			}
 		})
@@ -263,7 +263,7 @@ func TestTake(t *testing.T) {
 				t.Fatalf("expected status %v; got %v", tc.status, resp.StatusCode)
 
 			}
-			if contentType := strings.Join(resp.Header["Content-Type"], ""); tc.contentType != contentType {
+			if contentType := resp.Header.Get("Content-Type"); tc.contentType != contentType {
 				t.Fatalf("expected status %v; got %v", tc.contentType, contentType)
 			}
 		})
@@ -318,7 +318,7 @@ func TestDeleteUser(t *testing.T) {
 			if tc.status != resp.StatusCode {
 				t.Fatalf("expected status %v; got %v", tc.status, resp.StatusCode)
 			}
-			if contentType := strings.Join(resp.Header["Content-Type"], ""); tc.contentType != contentType {
+			if contentType := resp.Header.Get("Content-Type"); tc.contentType != contentType {
 				t.Fatalf("expected status %v; got %v", tc.contentType, contentType)
 			}
 		})
@@ -390,7 +390,7 @@ func TestTournament(t *testing.T) {
 			if tc.status != resp.StatusCode {
 				t.Fatalf("expected status %v; got %v", tc.status, resp.StatusCode)
 			}
-			if contentType := strings.Join(resp.Header["Content-Type"], ""); tc.contentType != contentType {
+			if contentType := resp.Header.Get("Content-Type"); tc.contentType != contentType {
 				t.Fatalf("expected status %v; got %v", tc.contentType, contentType)
 			}
 			if tc.status == http.StatusOK {
