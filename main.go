@@ -315,19 +315,16 @@ INNER JOIN participants ON id = tournament_id
 	err = json.Unmarshal([]byte(users), &t.Users)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, "can't Unmarshal json: %s\n", err)
+		fmt.Fprintf(w, "can't unmarshal json: %s\n", err)
 		return
 	}
 	if finished {
-		win, _ := winner.Value()
 		var ok bool
-		t.Winner, ok = win.(int64)
+		t.Winner, ok = winner.Int64, winner.Valid
 		if !ok {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-	} else {
-		t.Winner = 0
 	}
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(t)
