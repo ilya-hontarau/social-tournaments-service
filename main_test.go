@@ -325,7 +325,7 @@ func TestDeleteUser(t *testing.T) {
 	}
 }
 
-func TestTournament(t *testing.T) {
+func TestAddTournament(t *testing.T) {
 	tt := []struct {
 		name        string
 		method      string
@@ -398,6 +398,72 @@ func TestTournament(t *testing.T) {
 					t.Fatalf("expected %s, got %s", tc.response, respBody)
 				}
 			}
+		})
+	}
+}
+
+func TestGetTournament(t *testing.T) {
+	tt := []struct {
+		name        string
+		id          string
+		response    string
+		status      int
+		contentType string
+	}{
+		{
+			name:        "correct test",
+			id:          "1",
+			response:    `{"id":1,"name":"poker","deposit":0,"prize":0,"winner":0,"users":[1,3,4]}`,
+			status:      http.StatusOK,
+			contentType: "application/json",
+		},
+		{
+			name:        "incorrect id",
+			id:          "ahoi",
+			status:      http.StatusNotFound,
+			contentType: "text/plain; charset=utf-8",
+		},
+		{
+			name:   "uncreated account",
+			id:     "1000",
+			status: http.StatusNotFound,
+		},
+	}
+	s, err := NewServer()
+	if err != nil {
+		t.Fatalf("couldn't create db connection: %v", err)
+	}
+	defer s.DB.Close()
+
+	server := httptest.NewServer(s)
+	defer server.Close()
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			req, err := http.NewRequest("GET", fmt.Sprintf("%s/tournament/%s", server.URL, tc.id), nil)
+			if err != nil {
+				t.Fatalf("could not create request: %v", err)
+			}
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				t.Fatalf("couldnt get response: %s", err)
+			}
+			defer resp.Body.Close()
+			b, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				t.Fatalf("could not read response: %v", err)
+			}
+			if tc.status != resp.StatusCode {
+				t.Fatalf("expected status %v; got %v", tc.status, resp.StatusCode)
+			}
+			if contentType := resp.Header.Get("Content-Type"); tc.contentType != contentType {
+				t.Fatalf("expected status %v; got %v", tc.contentType, contentType)
+			}
+			if tc.status == http.StatusOK {
+				if respBody := string(bytes.TrimSpace(b)); tc.response != respBody {
+					t.Fatalf("expected %s, got %s", tc.response, respBody)
+				}
+			}
+
 		})
 	}
 }

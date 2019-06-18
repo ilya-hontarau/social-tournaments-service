@@ -69,6 +69,7 @@ func NewServer() (*Server, error) {
 	r.HandleFunc("/user/{id:[1-9]+[0-9]*}", s.deleteUser).Methods("DELETE")
 	r.HandleFunc("/user/{id:[1-9]+[0-9]*}/{category}", s.processBonus).Methods("POST")
 	r.HandleFunc("/tournament", s.addTournament).Methods("POST")
+	r.HandleFunc("/tournament/{id:[1-9]+[0-9]*}", s.getTournament).Methods("GET")
 	return &s, nil
 }
 
@@ -273,6 +274,59 @@ VALUES (?,?)`,
 	}{
 		ID: t.ID,
 	})
+	if err != nil {
+		w.Header().Set("Content-Type", "text/plain")
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "can't encode json: %s\n", err)
+		return
+	}
+}
+
+func (s *Server) getTournament(w http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, "incorrect id: %s", err)
+		return
+	}
+	var (
+		t        Tournament
+		finished bool
+		winner   sql.NullInt64
+		users    string
+	)
+	err = s.DB.QueryRowContext(req.Context(), `
+    SELECT id, name, deposit, prize, winner, finished, JSON_ARRAYAGG(user_id)
+      FROM tournaments
+INNER JOIN participants ON id = tournament_id 
+     WHERE id = ?
+  GROUP BY id`, id).
+		Scan(&t.ID, &t.Name, &t.Deposit, &t.Prize, &winner, &finished, &users)
+	if err == sql.ErrNoRows {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Println(err.Error())
+		return
+	}
+	err = json.Unmarshal([]byte(users), &t.Users)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "can't unmarshal json: %s\n", err)
+		return
+	}
+	if finished {
+		if !winner.Valid {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		t.Winner = winner.Int64
+	}
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(t)
 	if err != nil {
 		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusInternalServerError)
