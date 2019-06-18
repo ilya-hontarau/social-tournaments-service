@@ -300,7 +300,7 @@ func (s *Server) getTournament(w http.ResponseWriter, req *http.Request) {
     SELECT id, name, deposit, prize, winner, finished, JSON_ARRAYAGG(user_id)
       FROM tournaments
 INNER JOIN participants ON id = tournament_id 
-	 WHERE id = ?
+     WHERE id = ?
   GROUP BY id`, id).
 		Scan(&t.ID, &t.Name, &t.Deposit, &t.Prize, &winner, &finished, &users)
 	if err == sql.ErrNoRows {
