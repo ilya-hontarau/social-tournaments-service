@@ -18,11 +18,10 @@ jobs:
       -image: mysql:5.7.26
     steps:
       - run:
-          name: Import data
-          command: |
-            mysql -u root -p$PASS -h 127.0.0.1<sql/user.sql
-            mysql -u root -p$PASS -h 127.0.0.1<sql/tournament.sql   
+        name: Import data
+        command: |
+          mysql -u root -p$PASS -h 127.0.0.1<sql/user.sql
+          mysql -u root -p$PASS -h 127.0.0.1<sql/tournament.sql   
       - run:
-          name: test
-          command: make test
-                
+        name: test
+        command: make test
