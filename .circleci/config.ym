@@ -1,0 +1,10 @@
+version: 2
+jobs:
+  build:
+    working_directory: /go/src/github.com/illfate/social-tournaments-service
+    docker:
+      - image: circleci/golang:latest
+    steps:
+      - checkout
+      - run:
+          command: make build 
