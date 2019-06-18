@@ -319,12 +319,11 @@ INNER JOIN participants ON id = tournament_id
 		return
 	}
 	if finished {
-		var ok bool
-		t.Winner, ok = winner.Int64, winner.Valid
-		if !ok {
+		if !winner.Valid {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+		t.Winner = winner.Int64
 	}
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(t)
