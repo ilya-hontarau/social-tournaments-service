@@ -7,4 +7,8 @@ jobs:
     steps:
       - checkout
       - run:
-          command: make 
+          name: Fetch dependencies
+          command: make dep
+      - run:
+          name: Build
+          command: make
