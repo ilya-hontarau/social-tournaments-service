@@ -34,7 +34,7 @@ jobs:
           name: Install mysql client; import data
           command: |
            sudo apt-get install mysql-client
-           cat sql/user.sql sql/tournament.sql | mysql -uroot -p$PASS -h 127.0.0.1
+           cat sql/user.sql sql/tournament.sql | mysql -u$USER -p$PASS -h 127.0.0.1
       - run:
           name: Tests
           command: make test
