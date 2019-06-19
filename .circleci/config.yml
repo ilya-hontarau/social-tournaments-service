@@ -15,13 +15,22 @@ jobs:
   test:
     working_directory: /go/src/github.com/illfate/social-tournaments-service
     docker: 
-      - image:  mysql:5.7.26
+      - image: circleci/golang:latest
+      - image: circleci/mysql:5.7.26
     steps:
       - run:
           name: Import data
           command: |
-            mysql -u root -p$PASS -h 127.0.0.1<sql/user.sql
-            mysql -u root -p$PASS -h 127.0.0.1<sql/tournament.sql   
+           cat sql/user.sql sql/tournament.sql | mysql -uroot -p2010  
       - run:
-          name: test
+          name: Tests
           command: make test
+workflows:
+  version: 2
+  build-test:
+    jobs:
+      - build
+      - test :
+          requires:
+            - build
+      
