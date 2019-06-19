@@ -18,11 +18,12 @@ jobs:
       - image: circleci/golang:latest
       - image: circleci/mysql:5.7.26
     steps:
+      - checkout
       - run:
           name: Install mysql client; import data
           command: |
            sudo apt-get install mysql-client
-           cat $Circle_Working_Directory/sql/user.sql $Circle_Working_Directory/sql/tournament.sql | mysql -uroot -p2010  
+           cat sql/user.sql sql/tournament.sql | mysql -uroot -p2010 -h 127.0.0.1
       - run:
           name: Tests
           command: make test
