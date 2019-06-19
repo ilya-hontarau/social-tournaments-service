@@ -19,9 +19,10 @@ jobs:
       - image: circleci/mysql:5.7.26
     steps:
       - run:
-          name: Import data
+          name: Install mysql client; import data
           command: |
-           cat sql/user.sql sql/tournament.sql | mysql -uroot -p2010  
+           sudo apt-get install mysql-client
+           cat $Circle_Working_Directory/sql/user.sql $Circle_Working_Directory/sql/tournament.sql | mysql -uroot -p2010  
       - run:
           name: Tests
           command: make test
