@@ -15,13 +15,35 @@ jobs:
   test:
     working_directory: /go/src/github.com/illfate/social-tournaments-service
     docker: 
-      - image:  mysql:5.7.26
+      - image: circleci/golang:latest
+      - image: circleci/mysql:5.7.26
     steps:
+      - checkout
       - run:
-          name: Import data
+      # Our primary container isn't MYSQL so run a sleep command until it's ready.
+          name: Waiting for MySQL to be ready
           command: |
-            mysql -u root -p$PASS -h 127.0.0.1<sql/user.sql
-            mysql -u root -p$PASS -h 127.0.0.1<sql/tournament.sql   
+            for i in `seq 1 10`;
+            do
+              nc -z 127.0.0.1 3306 && echo Success && exit 0
+              echo -n .
+              sleep 1
+            done
+            echo Failed waiting for MySQL && exit 1
       - run:
-          name: test
+          name: Install mysql client; import data
+          command: |
+           sudo apt-get install mysql-client
+           cat sql/user.sql sql/tournament.sql | mysql -u$USER -p$PASS -h 127.0.0.1
+      - run:
+          name: Tests
           command: make test
+workflows:
+  version: 2
+  build-test:
+    jobs:
+      - build
+      - test :
+          requires:
+            - build
+      
