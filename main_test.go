@@ -413,7 +413,7 @@ func TestGetTournament(t *testing.T) {
 		{
 			name:        "correct test",
 			id:          "1",
-			response:    `{"id":1,"name":"poker","deposit":0,"prize":0,"winner":0,"users":[1,3,4]}`,
+			response:    `{"id":1,"name":"poker","deposit":1000,"prize":0,"winner":0,"users":[2,3]}`,
 			status:      http.StatusOK,
 			contentType: "application/json",
 		},
@@ -434,6 +434,24 @@ func TestGetTournament(t *testing.T) {
 		t.Fatalf("couldn't create db connection: %v", err)
 	}
 	defer s.DB.Close()
+
+	// Join tournament test has to do this quarries
+	_, err = s.DB.Exec(`INSERT INTO users(name) VALUES("ilya");`)
+	if err != nil {
+		t.Fatalf("coukd not insert name into users: %s", err)
+	}
+	_, err = s.DB.Exec(`INSERT INTO users(name) VALUES("max");`)
+	if err != nil {
+		t.Fatalf("could not insert name into users: %s", err)
+	}
+	_, err = s.DB.Exec(`INSERT INTO participants VALUES(2,1);`)
+	if err != nil {
+		t.Fatalf("could not insert name into users: %s", err)
+	}
+	_, err = s.DB.Exec(`INSERT INTO participants VALUES(3,1);`)
+	if err != nil {
+		t.Fatalf("could not insert name into users: %s", err)
+	}
 
 	server := httptest.NewServer(s)
 	defer server.Close()
