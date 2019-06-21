@@ -225,10 +225,11 @@ func TestTake(t *testing.T) {
 			contentType: "text/plain; charset=utf-8",
 		},
 		{
-			name:    "uncreated account",
-			id:      "1000",
-			request: `{ "points" : 7 }`,
-			status:  http.StatusNotFound,
+			name:        "uncreated account",
+			id:          "1000",
+			request:     `{ "points" : 7 }`,
+			status:      http.StatusNotFound,
+			contentType: "text/plain; charset=utf-8",
 		},
 		{
 			name:        "incorrect bonus request",
@@ -424,9 +425,10 @@ func TestGetTournament(t *testing.T) {
 			contentType: "text/plain; charset=utf-8",
 		},
 		{
-			name:   "uncreated account",
-			id:     "1000",
-			status: http.StatusNotFound,
+			name:        "uncreated account",
+			id:          "1000",
+			status:      http.StatusNotFound,
+			contentType: "text/plain; charset=utf-8",
 		},
 	}
 	s, err := NewServer()

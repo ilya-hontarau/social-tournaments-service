@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -11,37 +10,22 @@ import (
 
 	"github.com/gorilla/mux"
 
+	"github.com/illfate/social-tournaments-service/mysql"
+
 	_ "github.com/go-sql-driver/mysql"
 )
 
-// User represents a single user that is registered in a social tournaments service.
-type User struct {
-	ID      int64  `json:"id"`
-	Name    string `json:"name"`
-	Balance uint   `json:"balance"`
-}
-
-// Tournament represents a tournament in a social tournaments service.
-type Tournament struct {
-	ID      int64   `json:"id"`
-	Name    string  `json:"name"`
-	Deposit int64   `json:"deposit"`
-	Prize   int64   `json:"prize"`
-	Winner  int64   `json:"winner"`
-	Users   []int64 `json:"users"`
-}
-
 const (
+	port         = "PORT"
 	userEnvVar   = "DB_USER"
 	passEnvVar   = "DB_PASS"
 	dbNameEnvVar = "DB_NAME"
-	port         = "PORT"
 )
 
 // Server represents а server in social tournaments service.
 type Server struct {
 	http.Handler
-	DB *sql.DB
+	mysql.Connector
 }
 
 // NewServer constructs a Server, according to existing env variables.
@@ -55,19 +39,20 @@ func NewServer() (*Server, error) {
 	if dbName == "" {
 		return nil, fmt.Errorf(`no "%s" env variable`, dbNameEnvVar)
 	}
-	db, err := sql.Open("mysql", fmt.Sprintf("%s:%s@/%s", dbUser, dbPass, dbName))
+
+	db, err := mysql.New(dbUser, dbPass, dbName)
 	if err != nil {
-		return nil, fmt.Errorf("can't open db: %s", err)
+		return nil, err
 	}
 	r := mux.NewRouter()
 	s := Server{
-		DB:      db,
-		Handler: r,
+		Connector: *db,
+		Handler:   r,
 	}
 	r.HandleFunc("/user", s.addUser).Methods("POST")
 	r.HandleFunc("/user/{id:[1-9]+[0-9]*}", s.getUser).Methods("GET")
 	r.HandleFunc("/user/{id:[1-9]+[0-9]*}", s.deleteUser).Methods("DELETE")
-	r.HandleFunc("/user/{id:[1-9]+[0-9]*}/{category}", s.processBonus).Methods("POST")
+	r.HandleFunc("/user/{id:[1-9]+[0-9]*}/{action:(?:fund|take)}", s.processBonus).Methods("POST")
 	r.HandleFunc("/tournament", s.addTournament).Methods("POST")
 	r.HandleFunc("/tournament/{id:[1-9]+[0-9]*}", s.getTournament).Methods("GET")
 	return &s, nil
@@ -85,7 +70,7 @@ func main() {
 		log.Print(err)
 		return
 	}
-	defer s.DB.Close()
+	defer s.Close()
 
 	err = http.ListenAndServe(":"+portNum, s)
 	if err != nil {
@@ -95,25 +80,17 @@ func main() {
 }
 
 func (s *Server) addUser(w http.ResponseWriter, req *http.Request) {
-	var user User
+	var user mysql.User
 	err := json.NewDecoder(req.Body).Decode(&user)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintf(w, "cannot decode json: %s", err)
 		return
 	}
-	insert, err := s.DB.ExecContext(req.Context(), `
- INSERT INTO users (name, balance) 
-VALUES (?, ?)`,
-		user.Name, 0)
+	user.ID, err = s.Connector.AddUser(req.Context(), user.Name)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, "could not add user: %s", err)
-		return
-	}
-	user.ID, err = insert.LastInsertId()
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(w, err)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -131,12 +108,7 @@ VALUES (?, ?)`,
 }
 
 func (s *Server) processBonus(w http.ResponseWriter, req *http.Request) {
-	if req.Method != http.MethodPost {
-		http.NotFound(w, req)
-		return
-	}
 	vars := mux.Vars(req)
-
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -152,36 +124,18 @@ func (s *Server) processBonus(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "cannot decode json: %s", err)
 		return
 	}
-	var update sql.Result
-
-	switch vars["category"] {
-	case "fund":
-		update, err = s.DB.ExecContext(req.Context(), `
-UPDATE users 
-   SET balance = balance + ? 
- WHERE id = ?`, bonus.Points, id)
-	case "take":
-		update, err = s.DB.ExecContext(req.Context(), `
-UPDATE users 
-   SET balance = balance - ? 
- WHERE id = ?`, bonus.Points, id)
-	default:
+	if vars["action"] == "take" {
+		bonus.Points = -bonus.Points
+	}
+	err = s.Connector.UpdateUser(req.Context(), id, bonus.Points)
+	if err == mysql.ErrNotFound {
 		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(w, err)
 		return
 	}
-
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, "could not update balance: %s", err)
-		return
-	}
-	rows, err := update.RowsAffected()
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	if rows == 0 {
-		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(w, err)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -195,13 +149,8 @@ func (s *Server) getUser(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "incorrect id: %s", err)
 		return
 	}
-	var user User
-	err = s.DB.QueryRowContext(req.Context(), `
-SELECT id, name, balance 
-  FROM users 
- WHERE id = ?`, id).
-		Scan(&user.ID, &user.Name, &user.Balance)
-	if err == sql.ErrNoRows {
+	user, err := s.Connector.GetUser(req.Context(), id) // need to return user
+	if err == mysql.ErrNotFound {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
@@ -227,46 +176,30 @@ func (s *Server) deleteUser(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "incorrect id: %s", err)
 		return
 	}
-	delete, err := s.DB.ExecContext(req.Context(), `
-DELETE 
-  FROM users
- WHERE id = ?`, id)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	rows, err := delete.RowsAffected()
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	if rows == 0 {
+	err = s.Connector.DeleteUser(req.Context(), id)
+	if err == mysql.ErrNotFound {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 }
 
 func (s *Server) addTournament(w http.ResponseWriter, req *http.Request) {
-	var t Tournament
+	var t mysql.Tournament
 	err := json.NewDecoder(req.Body).Decode(&t)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintf(w, "cannot decode json: %s", err)
 		return
 	}
-	insert, err := s.DB.ExecContext(req.Context(), `
- INSERT INTO tournaments (name,deposit)
-VALUES (?,?)`,
-		t.Name, t.Deposit)
+	t.ID, err = s.Connector.AddTournament(req.Context(), t.Name, t.Deposit)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, "could not add user: %s", err)
-		return
-	}
-	t.ID, err = insert.LastInsertId()
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		fmt.Fprint(w, err)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(struct {
@@ -290,40 +223,16 @@ func (s *Server) getTournament(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "incorrect id: %s", err)
 		return
 	}
-	var (
-		t        Tournament
-		finished bool
-		winner   sql.NullInt64
-		users    string
-	)
-	err = s.DB.QueryRowContext(req.Context(), `
-    SELECT id, name, deposit, prize, winner, finished, JSON_ARRAYAGG(user_id)
-      FROM tournaments
-INNER JOIN participants ON id = tournament_id 
-     WHERE id = ?
-  GROUP BY id`, id).
-		Scan(&t.ID, &t.Name, &t.Deposit, &t.Prize, &winner, &finished, &users)
-	if err == sql.ErrNoRows {
+	t, err := s.Connector.GetTournament(req.Context(), id)
+	if err == mysql.ErrNotFound {
 		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(w, err)
 		return
 	}
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		log.Println(err.Error())
+		fmt.Fprint(w, err)
 		return
-	}
-	err = json.Unmarshal([]byte(users), &t.Users)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, "can't unmarshal json: %s\n", err)
-		return
-	}
-	if finished {
-		if !winner.Valid {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		t.Winner = winner.Int64
 	}
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(t)
