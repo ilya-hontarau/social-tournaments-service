@@ -84,13 +84,13 @@ func (s *Server) addUser(w http.ResponseWriter, req *http.Request) {
 	err := json.NewDecoder(req.Body).Decode(&user)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintf(w, "cannot decode json: %s", err)
+		fmt.Fprintf(w, "can't decode json: %s", err)
 		return
 	}
 	user.ID, err = s.Connector.AddUser(req.Context(), user.Name)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(w, err)
+		fmt.Fprintf(w, "couldn't add user: %s", err)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -130,12 +130,12 @@ func (s *Server) processBonus(w http.ResponseWriter, req *http.Request) {
 	err = s.Connector.UpdateUser(req.Context(), id, bonus.Points)
 	if err == mysql.ErrNotFound {
 		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprint(w, err)
+		fmt.Fprintf(w, "couldn't update user: %s", err)
 		return
 	}
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(w, err)
+		fmt.Fprintf(w, "couldn't update user: %s", err)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -199,7 +199,7 @@ func (s *Server) addTournament(w http.ResponseWriter, req *http.Request) {
 	t.ID, err = s.Connector.AddTournament(req.Context(), t.Name, t.Deposit)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(w, err)
+		fmt.Fprintf(w, "couldn't add tournament: %s", err)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(struct {
@@ -226,12 +226,12 @@ func (s *Server) getTournament(w http.ResponseWriter, req *http.Request) {
 	t, err := s.Connector.GetTournament(req.Context(), id)
 	if err == mysql.ErrNotFound {
 		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprint(w, err)
+		fmt.Fprintf(w, "couldn't get tournament: %s", err)
 		return
 	}
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(w, err)
+		fmt.Fprintf(w, "couldn't get tournament: %s", err)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
