@@ -225,10 +225,11 @@ func TestTake(t *testing.T) {
 			contentType: "text/plain; charset=utf-8",
 		},
 		{
-			name:    "uncreated account",
-			id:      "1000",
-			request: `{ "points" : 7 }`,
-			status:  http.StatusNotFound,
+			name:        "uncreated account",
+			id:          "1000",
+			request:     `{ "points" : 7 }`,
+			status:      http.StatusNotFound,
+			contentType: "text/plain; charset=utf-8",
 		},
 		{
 			name:        "incorrect bonus request",
@@ -353,7 +354,7 @@ func TestAddTournament(t *testing.T) {
 			name:        "incorrect deposit",
 			method:      http.MethodPost,
 			request:     `{"name": "football","deposit": -1000}`,
-			status:      http.StatusInternalServerError,
+			status:      http.StatusBadRequest,
 			contentType: "text/plain; charset=utf-8",
 		},
 		{
@@ -424,9 +425,10 @@ func TestGetTournament(t *testing.T) {
 			contentType: "text/plain; charset=utf-8",
 		},
 		{
-			name:   "uncreated account",
-			id:     "1000",
-			status: http.StatusNotFound,
+			name:        "uncreated account",
+			id:          "1000",
+			status:      http.StatusNotFound,
+			contentType: "text/plain; charset=utf-8",
 		},
 	}
 	s, err := NewServer()
@@ -438,19 +440,19 @@ func TestGetTournament(t *testing.T) {
 	// Join tournament test has to do this quarries
 	_, err = s.DB.Exec(`INSERT INTO users(name) VALUES("ilya");`)
 	if err != nil {
-		t.Fatalf("coukd not insert name into users: %s", err)
+		t.Fatalf("couldn't not insert name into users: %s", err)
 	}
 	_, err = s.DB.Exec(`INSERT INTO users(name) VALUES("max");`)
 	if err != nil {
-		t.Fatalf("could not insert name into users: %s", err)
+		t.Fatalf("couldn't insert name into users: %s", err)
 	}
 	_, err = s.DB.Exec(`INSERT INTO participants VALUES(2,1);`)
 	if err != nil {
-		t.Fatalf("could not insert name into users: %s", err)
+		t.Fatalf("couldn't insert name into users: %s", err)
 	}
 	_, err = s.DB.Exec(`INSERT INTO participants VALUES(3,1);`)
 	if err != nil {
-		t.Fatalf("could not insert name into users: %s", err)
+		t.Fatalf("couldn't insert name into users: %s", err)
 	}
 
 	server := httptest.NewServer(s)

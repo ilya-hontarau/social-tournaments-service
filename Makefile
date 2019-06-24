@@ -1,5 +1,5 @@
 bin/sts:
-	go build -o bin/sts
+	go build -o bin/sts ./cmd/sts
 
 .PHONY: dep
 dep: 
