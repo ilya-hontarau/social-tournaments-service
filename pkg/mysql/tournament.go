@@ -5,22 +5,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+
+	"github.com/illfate/social-tournaments-service/pkg/sts"
 )
 
-// Tournament represents a tournament in a social tournaments service.
-type Tournament struct {
-	ID      int64   `json:"id"`
-	Name    string  `json:"name"`
-	Deposit uint64  `json:"deposit"`
-	Prize   uint64  `json:"prize"`
-	Winner  int64   `json:"winner"`
-	Users   []int64 `json:"users"`
-}
-
 // AddTournament adds tournament with passed name and deposit. Return id of this tournament.
-// If tournament isn't found, function returns ErrNotFound.
 func (c *Connector) AddTournament(ctx context.Context, name string, deposit uint64) (int64, error) {
-	insert, err := c.DB.ExecContext(ctx, `
+	insert, err := c.db.ExecContext(ctx, `
  INSERT INTO tournaments (name,deposit)
  	  VALUES (?, ?)`,
 		name, deposit)
@@ -36,14 +27,14 @@ func (c *Connector) AddTournament(ctx context.Context, name string, deposit uint
 
 // GetTournament returns tournament with passed id. If tournament isn't found,
 // function returns ErrNotFound.
-func (c *Connector) GetTournament(ctx context.Context, id int64) (*Tournament, error) {
+func (c *Connector) GetTournament(ctx context.Context, id int64) (*sts.Tournament, error) {
 	var (
 		users    string
 		winner   sql.NullInt64
 		finished bool
-		t        Tournament
+		t        sts.Tournament
 	)
-	err := c.DB.QueryRowContext(ctx, `
+	err := c.db.QueryRowContext(ctx, `
     SELECT id, name, deposit, prize, winner, finished, JSON_ARRAYAGG(user_id)
       FROM tournaments
 INNER JOIN participants ON id = tournament_id 
@@ -51,7 +42,7 @@ INNER JOIN participants ON id = tournament_id
   GROUP BY id`, id).
 		Scan(&t.ID, &t.Name, &t.Deposit, &t.Prize, &winner, &finished, &users)
 	if err == sql.ErrNoRows {
-		return nil, ErrNotFound
+		return nil, sts.ErrNotFound
 	}
 	if err != nil {
 		return nil, err
