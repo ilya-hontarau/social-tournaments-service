@@ -11,27 +11,28 @@ import (
 type User struct {
 	ID      int64  `json:"id"`
 	Name    string `json:"name"`
-	Balance uint   `json:"balance"`
+	Balance uint64 `json:"balance"`
 }
 
-// AddUser adds user with passed name to db. It returns id of this user.
-func (c *Connector) AddUser(ctx context.Context, name string) (id int64, err error) {
+// AddUser adds user with passed name to db. It returns id of this user. If user isn't found,
+// function returns ErrNotFound.
+func (c *Connector) AddUser(ctx context.Context, name string) (int64, error) {
 	insert, err := c.DB.ExecContext(ctx, `
  INSERT INTO users (name) 
 VALUES (?)`,
 		name)
 	if err != nil {
-		return 0, fmt.Errorf("could not add user: %s", err)
+		return 0, fmt.Errorf("couldn't add user: %s", err)
 	}
-	id, err = insert.LastInsertId()
+	id, err := insert.LastInsertId()
 	if err != nil {
 		return 0, err
 	}
 	return id, nil
 }
 
-// GetUser returns user with passed id.
-func (c *Connector) GetUser(ctx context.Context, id int) (*User, error) {
+// GetUser returns user with passed id. If user isn't found, function returns ErrNotFound.
+func (c *Connector) GetUser(ctx context.Context, id int64) (*User, error) {
 	var user User
 	err := c.DB.QueryRowContext(ctx, `
 SELECT id, name, balance 
@@ -48,8 +49,8 @@ SELECT id, name, balance
 	return &user, nil
 }
 
-// DeleteUser deletes user with passed id.
-func (c *Connector) DeleteUser(ctx context.Context, id int) error {
+// DeleteUser deletes user with passed id. If user isn't found, function returns ErrNotFound.
+func (c *Connector) DeleteUser(ctx context.Context, id int64) error {
 	delete, err := c.DB.ExecContext(ctx, `
 	DELETE 
 	  FROM users
@@ -67,14 +68,14 @@ func (c *Connector) DeleteUser(ctx context.Context, id int) error {
 	return nil
 }
 
-// UpdateUser updates balance user with passed id.
-func (c *Connector) UpdateUser(ctx context.Context, id, points int) error {
+// AddPoints adds points to user with passed id. If user isn't found, function returns ErrNotFound.
+func (c *Connector) AddPoints(ctx context.Context, id, points int64) error {
 	update, err := c.DB.ExecContext(ctx, `
 	UPDATE users 
 	   SET balance = balance + ? 
 	 WHERE id = ?`, points, id)
 	if err != nil {
-		return fmt.Errorf("could not update balance: %s", err)
+		return fmt.Errorf("couldn't update balance: %s", err)
 	}
 	rows, err := update.RowsAffected()
 	if err != nil {

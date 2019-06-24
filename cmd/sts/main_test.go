@@ -440,19 +440,19 @@ func TestGetTournament(t *testing.T) {
 	// Join tournament test has to do this quarries
 	_, err = s.DB.Exec(`INSERT INTO users(name) VALUES("ilya");`)
 	if err != nil {
-		t.Fatalf("coukd not insert name into users: %s", err)
+		t.Fatalf("couldn't not insert name into users: %s", err)
 	}
 	_, err = s.DB.Exec(`INSERT INTO users(name) VALUES("max");`)
 	if err != nil {
-		t.Fatalf("could not insert name into users: %s", err)
+		t.Fatalf("couldn't insert name into users: %s", err)
 	}
 	_, err = s.DB.Exec(`INSERT INTO participants VALUES(2,1);`)
 	if err != nil {
-		t.Fatalf("could not insert name into users: %s", err)
+		t.Fatalf("couldn't insert name into users: %s", err)
 	}
 	_, err = s.DB.Exec(`INSERT INTO participants VALUES(3,1);`)
 	if err != nil {
-		t.Fatalf("could not insert name into users: %s", err)
+		t.Fatalf("couldn't insert name into users: %s", err)
 	}
 
 	server := httptest.NewServer(s)

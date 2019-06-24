@@ -11,20 +11,21 @@ import (
 type Tournament struct {
 	ID      int64   `json:"id"`
 	Name    string  `json:"name"`
-	Deposit int64   `json:"deposit"`
-	Prize   int64   `json:"prize"`
+	Deposit uint64  `json:"deposit"`
+	Prize   uint64  `json:"prize"`
 	Winner  int64   `json:"winner"`
 	Users   []int64 `json:"users"`
 }
 
 // AddTournament adds tournament with passed name and deposit. Return id of this tournament.
-func (c *Connector) AddTournament(ctx context.Context, name string, deposit int64) (int64, error) {
+// If tournament isn't found, function returns ErrNotFound.
+func (c *Connector) AddTournament(ctx context.Context, name string, deposit uint64) (int64, error) {
 	insert, err := c.DB.ExecContext(ctx, `
  INSERT INTO tournaments (name,deposit)
  	  VALUES (?, ?)`,
 		name, deposit)
 	if err != nil {
-		return 0, fmt.Errorf("could not add user: %s", err)
+		return 0, fmt.Errorf("couldn't add user: %s", err)
 	}
 	id, err := insert.LastInsertId()
 	if err != nil {
@@ -33,8 +34,9 @@ func (c *Connector) AddTournament(ctx context.Context, name string, deposit int6
 	return id, nil
 }
 
-// GetTournament returns tournament with passed id.
-func (c *Connector) GetTournament(ctx context.Context, id int) (*Tournament, error) {
+// GetTournament returns tournament with passed id. If tournament isn't found,
+// function returns ErrNotFound.
+func (c *Connector) GetTournament(ctx context.Context, id int64) (*Tournament, error) {
 	var (
 		users    string
 		winner   sql.NullInt64
@@ -57,11 +59,11 @@ INNER JOIN participants ON id = tournament_id
 
 	err = json.Unmarshal([]byte(users), &t.Users)
 	if err != nil {
-		return nil, fmt.Errorf("can't unmarshal json: %s", err)
+		return nil, fmt.Errorf("couldn't unmarshal json: %s", err)
 	}
 	if finished {
 		if !winner.Valid {
-			return nil, err
+			return nil, fmt.Errorf("no winner")
 		}
 		t.Winner = winner.Int64
 	}
