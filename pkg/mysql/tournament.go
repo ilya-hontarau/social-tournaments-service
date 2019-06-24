@@ -25,7 +25,7 @@ func (c *Connector) AddTournament(ctx context.Context, name string, deposit uint
  	  VALUES (?, ?)`,
 		name, deposit)
 	if err != nil {
-		return 0, fmt.Errorf("couldn't add user: %s", err)
+		return 0, fmt.Errorf("couldn't add tournament: %s", err)
 	}
 	id, err := insert.LastInsertId()
 	if err != nil {

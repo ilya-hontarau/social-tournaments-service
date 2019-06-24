@@ -354,7 +354,7 @@ func TestAddTournament(t *testing.T) {
 			name:        "incorrect deposit",
 			method:      http.MethodPost,
 			request:     `{"name": "football","deposit": -1000}`,
-			status:      http.StatusInternalServerError,
+			status:      http.StatusBadRequest,
 			contentType: "text/plain; charset=utf-8",
 		},
 		{
