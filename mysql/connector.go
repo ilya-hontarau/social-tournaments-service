@@ -11,7 +11,7 @@ type Connector struct {
 	DB *sql.DB // DB field has to be an unexported
 }
 
-// ErrNotFound is returned when item hasn't found in db.
+// ErrNotFound is returned when item hasn't been found in db.
 var ErrNotFound = errors.New("not found")
 
 // New constructs new connection to db.
