@@ -27,7 +27,7 @@ type Server struct {
 }
 
 // NewServer constructs a Server, according to existing env variables.
-func NewServer(db sts.Service) (*Server, error) {
+func NewServer(db sts.Service) *Server {
 	r := mux.NewRouter()
 	s := Server{
 		service: db,
@@ -39,7 +39,7 @@ func NewServer(db sts.Service) (*Server, error) {
 	r.HandleFunc("/user/{id:[1-9]+[0-9]*}/{action:(?:fund|take)}", s.addPoints).Methods("POST")
 	r.HandleFunc("/tournament", s.addTournament).Methods("POST")
 	r.HandleFunc("/tournament/{id:[1-9]+[0-9]*}", s.getTournament).Methods("GET")
-	return &s, nil
+	return &s
 }
 
 func main() {
@@ -62,11 +62,7 @@ func main() {
 	}
 	defer db.Close()
 
-	s, err := NewServer(db)
-	if err != nil {
-		log.Print(err)
-		return
-	}
+	s := NewServer(db)
 
 	portNum := os.Getenv(port)
 	if portNum == "" {
