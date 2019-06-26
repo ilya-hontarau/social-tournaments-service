@@ -5,6 +5,7 @@ bin/sts:
 dep: 
 	go get -d github.com/go-sql-driver/mysql 
 	go get -d github.com/gorilla/mux
+	go get -d github.com/stretchr/testify/mock
 
 .PHONY: test
 test:

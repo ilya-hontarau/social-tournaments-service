@@ -2,12 +2,17 @@ package main
 
 import (
 	"bytes"
+	"database/sql"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/illfate/social-tournaments-service/pkg/sts"
+
+	"github.com/illfate/social-tournaments-service/internal/mockdb"
 )
 
 func TestAddUser(t *testing.T) {
@@ -41,11 +46,9 @@ func TestAddUser(t *testing.T) {
 			status:  http.StatusMethodNotAllowed,
 		},
 	}
-	s, err := NewServer()
-	if err != nil {
-		t.Fatalf("couldn't create db connection: %v", err)
-	}
-	defer s.DB.Close()
+	db := new(mockdb.Connector)
+	db.On("AddUser", "ilya").Return(int64(1), nil)
+	s := NewServer(db)
 
 	server := httptest.NewServer(s)
 	defer server.Close()
@@ -106,11 +109,14 @@ func TestGetUser(t *testing.T) {
 			status: http.StatusNotFound,
 		},
 	}
-	s, err := NewServer()
-	if err != nil {
-		t.Fatalf("couldn't create db connection: %v", err)
-	}
-	defer s.DB.Close()
+	db := new(mockdb.Connector)
+	db.On("GetUser", int64(1)).Return(&sts.User{
+		ID:      1,
+		Name:    "ilya",
+		Balance: 0,
+	}, nil)
+	db.On("GetUser", int64(1000)).Return((*sts.User)(nil), sts.ErrNotFound)
+	s := NewServer(db)
 
 	server := httptest.NewServer(s)
 	defer server.Close()
@@ -168,16 +174,16 @@ func TestFund(t *testing.T) {
 		},
 		{
 			name:        "incorrect json",
+			id:          "10",
 			request:     `{ "name" : "max" }`,
 			status:      http.StatusNotFound,
 			contentType: "text/plain; charset=utf-8",
 		},
 	}
-	s, err := NewServer()
-	if err != nil {
-		t.Fatalf("couldn't create db connection: %v", err)
-	}
-	defer s.DB.Close()
+	db := new(mockdb.Connector)
+	db.On("AddPoints", int64(1), int64(7)).Return(nil)
+	db.On("AddPoints", int64(10), int64(0)).Return(sts.ErrNotFound)
+	s := NewServer(db)
 
 	server := httptest.NewServer(s)
 	defer server.Close()
@@ -239,11 +245,11 @@ func TestTake(t *testing.T) {
 			contentType: "text/plain; charset=utf-8",
 		},
 	}
-	s, err := NewServer()
-	if err != nil {
-		t.Fatalf("couldn't create db connection: %v", err)
-	}
-	defer s.DB.Close()
+	db := new(mockdb.Connector)
+	db.On("AddPoints", int64(1), int64(-7)).Return(nil)
+	db.On("AddPoints", int64(1000), int64(-7)).Return(sts.ErrNotFound)
+	db.On("AddPoints", int64(1), int64(-7000)).Return(sql.ErrNoRows)
+	s := NewServer(db)
 
 	server := httptest.NewServer(s)
 	defer server.Close()
@@ -295,11 +301,10 @@ func TestDeleteUser(t *testing.T) {
 			status: http.StatusNotFound,
 		},
 	}
-	s, err := NewServer()
-	if err != nil {
-		t.Fatalf("couldn't create db connection: %v", err)
-	}
-	defer s.DB.Close()
+	db := new(mockdb.Connector)
+	db.On("DeleteUser", int64(1)).Return(nil)
+	db.On("DeleteUser", int64(100)).Return(sts.ErrNotFound)
+	s := NewServer(db)
 
 	server := httptest.NewServer(s)
 	defer server.Close()
@@ -364,11 +369,9 @@ func TestAddTournament(t *testing.T) {
 			status:  http.StatusMethodNotAllowed,
 		},
 	}
-	s, err := NewServer()
-	if err != nil {
-		t.Fatalf("couldn't create db connection: %v", err)
-	}
-	defer s.DB.Close()
+	db := new(mockdb.Connector)
+	db.On("AddTournament", "poker", uint64(1000)).Return(int64(1), nil)
+	s := NewServer(db)
 
 	server := httptest.NewServer(s)
 	defer server.Close()
@@ -431,29 +434,17 @@ func TestGetTournament(t *testing.T) {
 			contentType: "text/plain; charset=utf-8",
 		},
 	}
-	s, err := NewServer()
-	if err != nil {
-		t.Fatalf("couldn't create db connection: %v", err)
-	}
-	defer s.DB.Close()
-
-	// Join tournament test has to do this quarries
-	_, err = s.DB.Exec(`INSERT INTO users(name) VALUES("ilya");`)
-	if err != nil {
-		t.Fatalf("couldn't not insert name into users: %s", err)
-	}
-	_, err = s.DB.Exec(`INSERT INTO users(name) VALUES("max");`)
-	if err != nil {
-		t.Fatalf("couldn't insert name into users: %s", err)
-	}
-	_, err = s.DB.Exec(`INSERT INTO participants VALUES(2,1);`)
-	if err != nil {
-		t.Fatalf("couldn't insert name into users: %s", err)
-	}
-	_, err = s.DB.Exec(`INSERT INTO participants VALUES(3,1);`)
-	if err != nil {
-		t.Fatalf("couldn't insert name into users: %s", err)
-	}
+	db := new(mockdb.Connector)
+	db.On("GetTournament", int64(1)).Return(&sts.Tournament{
+		ID:      1,
+		Name:    "poker",
+		Deposit: 1000,
+		Prize:   0,
+		Winner:  0,
+		Users:   []int64{2, 3},
+	}, nil)
+	db.On("GetTournament", int64(1000)).Return((*sts.Tournament)(nil), sts.ErrNotFound)
+	s := NewServer(db)
 
 	server := httptest.NewServer(s)
 	defer server.Close()
