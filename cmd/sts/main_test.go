@@ -50,7 +50,7 @@ func TestAddUser(t *testing.T) {
 	db.On("AddUser", "ilya").Return(int64(1), nil)
 	s, err := NewServer(db)
 	if err != nil {
-		t.Fatalf("couldn't create db connection: %v", err)
+		t.Fatalf("couldn't create server connection: %v", err)
 	}
 
 	server := httptest.NewServer(s)
@@ -118,10 +118,10 @@ func TestGetUser(t *testing.T) {
 		Name:    "ilya",
 		Balance: 0,
 	}, nil)
-	db.On("GetUser", int64(1000)).Return(&sts.User{}, sts.ErrNotFound) // TODO : fix return
+	db.On("GetUser", int64(1000)).Return((*sts.User)(nil), sts.ErrNotFound)
 	s, err := NewServer(db)
 	if err != nil {
-		t.Fatalf("couldn't create db connection: %v", err)
+		t.Fatalf("couldn't create server connection: %v", err)
 	}
 
 	server := httptest.NewServer(s)
@@ -191,7 +191,7 @@ func TestFund(t *testing.T) {
 	db.On("AddPoints", int64(10), int64(0)).Return(sts.ErrNotFound)
 	s, err := NewServer(db)
 	if err != nil {
-		t.Fatalf("couldn't create db connection: %v", err)
+		t.Fatalf("couldn't create server connection: %v", err)
 	}
 
 	server := httptest.NewServer(s)
@@ -260,7 +260,7 @@ func TestTake(t *testing.T) {
 	db.On("AddPoints", int64(1), int64(-7000)).Return(sql.ErrNoRows)
 	s, err := NewServer(db)
 	if err != nil {
-		t.Fatalf("couldn't create db connection: %v", err)
+		t.Fatalf("couldn't create server connection: %v", err)
 	}
 
 	server := httptest.NewServer(s)
@@ -318,7 +318,7 @@ func TestDeleteUser(t *testing.T) {
 	db.On("DeleteUser", int64(100)).Return(sts.ErrNotFound)
 	s, err := NewServer(db)
 	if err != nil {
-		t.Fatalf("couldn't create db connection: %v", err)
+		t.Fatalf("couldn't create server connection: %v", err)
 	}
 
 	server := httptest.NewServer(s)
@@ -388,7 +388,7 @@ func TestAddTournament(t *testing.T) {
 	db.On("AddTournament", "poker", uint64(1000)).Return(int64(1), nil)
 	s, err := NewServer(db)
 	if err != nil {
-		t.Fatalf("couldn't create db connection: %v", err)
+		t.Fatalf("couldn't create server connection: %v", err)
 	}
 
 	server := httptest.NewServer(s)
@@ -461,10 +461,10 @@ func TestGetTournament(t *testing.T) {
 		Winner:  0,
 		Users:   []int64{2, 3},
 	}, nil)
-	db.On("GetTournament", int64(1000)).Return(&sts.Tournament{}, sts.ErrNotFound) // TODO: fix return
+	db.On("GetTournament", int64(1000)).Return((*sts.Tournament)(nil), sts.ErrNotFound)
 	s, err := NewServer(db)
 	if err != nil {
-		t.Fatalf("couldn't create db connection: %v", err)
+		t.Fatalf("couldn't create server connection: %v", err)
 	}
 	server := httptest.NewServer(s)
 	defer server.Close()
