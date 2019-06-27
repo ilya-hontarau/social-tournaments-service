@@ -26,6 +26,7 @@ type User struct {
 var ErrNotFound = errors.New("not found")
 
 type Service interface {
+	//
 	AddUser(ctx context.Context, name string) (int64, error)
 
 	// If user isn't found, function has to return ErrNotFound.
@@ -41,4 +42,7 @@ type Service interface {
 
 	// If tournament isn't found, function has to return ErrNotFound.
 	GetTournament(ctx context.Context, id int64) (*Tournament, error)
+
+	// If tournament isn't found, function has to return ErrNotFound.
+	JoinTournament(ctx context.Context, tournamentID, userID int64) error
 }

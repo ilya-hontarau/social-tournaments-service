@@ -39,6 +39,7 @@ func NewServer(db sts.Service) *Server {
 	r.HandleFunc("/user/{id:[1-9]+[0-9]*}/{action:(?:fund|take)}", s.addPoints).Methods("POST")
 	r.HandleFunc("/tournament", s.addTournament).Methods("POST")
 	r.HandleFunc("/tournament/{id:[1-9]+[0-9]*}", s.getTournament).Methods("GET")
+	r.HandleFunc("/tournament/{id:[1-9]+[0-9]*}/join", s.joinTournament).Methods("POST")
 	return &s
 }
 
@@ -236,6 +237,36 @@ func (s *Server) getTournament(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "couldn't encode json: %s\n", err)
+		return
+	}
+}
+
+func (s *Server) joinTournament(w http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	tournamentID, err := strconv.ParseInt(vars["id"], 10, 64)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, "incorrect id: %s", err)
+		return
+	}
+	user := struct {
+		ID int64 `json:"userId"`
+	}{}
+	err = json.NewDecoder(req.Body).Decode(&user)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, "can't decode json: %s", err)
+		return
+	}
+	err = s.service.JoinTournament(req.Context(), tournamentID, user.ID)
+	if err == sts.ErrNotFound {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(w, "couldn't join tournament: %s", err)
+		return
+	}
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "couldn't join tournament: %s", err)
 		return
 	}
 }

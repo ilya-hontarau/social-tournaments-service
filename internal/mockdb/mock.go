@@ -40,3 +40,7 @@ func (c *Connector) GetTournament(ctx context.Context, id int64) (*sts.Tournamen
 	args := c.Called(id)
 	return args.Get(0).(*sts.Tournament), args.Error(1)
 }
+func (c *Connector) JoinTournament(ctx context.Context, tournamentID, userID int64) error {
+	args := c.Called(tournamentID, userID)
+	return args.Error(0)
+}
