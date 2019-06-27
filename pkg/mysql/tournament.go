@@ -63,7 +63,7 @@ func (c *Connector) GetTournament(ctx context.Context, id int64) (*sts.Tournamen
 }
 
 // JoinTournament adds user with passed userID to tournament with passed tournamentID.
-//If tournament or user isn't found, function returns ErrNotFound.
+// If tournament or user isn't found, function returns ErrNotFound.
 func (c *Connector) JoinTournament(ctx context.Context, tournamentID, userID int64) error {
 	tx, err := c.db.BeginTx(ctx, nil)
 	if err != nil {
