@@ -4,10 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/illfate/social-tournaments-service/pkg/sts"
-	"github.com/pkg/errors"
 )
 
 // AddTournament adds tournament with passed name and deposit. Return id of this tournament.
