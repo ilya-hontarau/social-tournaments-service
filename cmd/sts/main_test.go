@@ -478,3 +478,66 @@ func TestGetTournament(t *testing.T) {
 		})
 	}
 }
+
+func TestJoinTournament(t *testing.T) {
+	tt := []struct {
+		name         string
+		tournamentID string
+		request      string
+		status       int
+	}{
+		{
+			name:         "correct test",
+			tournamentID: "1",
+			request:      `{"userId":1}`,
+			status:       http.StatusOK,
+		},
+		{
+			name:         "incorrect request userID",
+			tournamentID: "1",
+			request:      `{"userId":-111}`,
+			status:       http.StatusNotFound,
+		},
+		{
+			name:         "incorrect tournamentID",
+			tournamentID: "lol",
+			request:      `{"userId":1}`,
+			status:       http.StatusNotFound,
+		},
+		{
+			name:         "uncreated account",
+			tournamentID: "100",
+			request:      `{"userId":1}`,
+			status:       http.StatusNotFound,
+		},
+	}
+	db := new(mockdb.Connector)
+	db.On("JoinTournament", int64(1), int64(1)).Return(nil)
+	db.On("JoinTournament", int64(1), int64(-111)).Return(sts.ErrNotFound)
+	db.On("JoinTournament", int64(100), int64(1)).Return(sts.ErrNotFound)
+	s := NewServer(db)
+
+	server := httptest.NewServer(s)
+	defer server.Close()
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			req, err := http.NewRequest("POST",
+				fmt.Sprintf("%s/tournament/%s/join", server.URL, tc.tournamentID),
+				strings.NewReader(tc.request))
+			if err != nil {
+				t.Fatalf("could not create request: %v", err)
+			}
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				t.Fatalf("couldnt get response: %s", err)
+			}
+			defer resp.Body.Close()
+			if err != nil {
+				t.Fatalf("could not read response: %v", err)
+			}
+			if tc.status != resp.StatusCode {
+				t.Fatalf("expected status %v; got %v", tc.status, resp.StatusCode)
+			}
+		})
+	}
+}

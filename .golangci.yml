@@ -38,3 +38,6 @@ issues:
         - dupl
         - gosec
         - scopelint
+    - linters:
+        - errcheck
+      text: "tx.Rollback()"
