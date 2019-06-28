@@ -1,5 +1,5 @@
 bin/sts:
-	go build -o bin/sts ./cmd/sts
+	go build -ldflags "-linkmode external -extldflags -static" -a -o bin/sts ./cmd/sts
 
 .PHONY: dep
 dep: 
