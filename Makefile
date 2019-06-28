@@ -14,3 +14,8 @@ test:
 .PHONY: lint
 lint:
 	golangci-lint run
+
+.PHONY: clean
+clean:
+	rm -rf bin
+	go clean
