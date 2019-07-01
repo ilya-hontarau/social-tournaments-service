@@ -1,5 +1,5 @@
 bin/sts:
-	go build -o bin/sts ./cmd/sts
+	go build -ldflags "-linkmode external -extldflags -static" -o bin/sts ./cmd/sts
 
 .PHONY: dep
 dep: 
@@ -14,3 +14,8 @@ test:
 .PHONY: lint
 lint:
 	golangci-lint run
+
+.PHONY: clean
+clean:
+	rm -rf bin
+	go clean
