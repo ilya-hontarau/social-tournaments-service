@@ -44,6 +44,20 @@ jobs:
           name: Run tests
           command: make test
 
+  docker-publisher:
+    docker:
+      - image: circleci/buildpack-deps:stretch
+    steps:
+      - run:
+          name: Log in docker hub
+          command: docker login -u $DOCKER_HUB_USERNAME -p $DOCKER_HUB_PWD
+      - run:
+           name: Build image
+           command: docker build -t illfate/sts .
+      - run:
+          name: Push image to Docker Hub
+          command: docker push illfate/sts
+
 workflows:
   version: 2
   build-test:
@@ -52,3 +66,9 @@ workflows:
       - test :
           requires:
             - build
+      - docker-publish :
+          requires:
+            - test
+          filters:
+            branches:
+              only: master
