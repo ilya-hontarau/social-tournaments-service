@@ -26,7 +26,6 @@ type User struct {
 var ErrNotFound = errors.New("not found")
 
 type Service interface {
-
 	// AddUser adds user with passed name to db. It returns id of this user.
 	AddUser(ctx context.Context, name string) (int64, error)
 

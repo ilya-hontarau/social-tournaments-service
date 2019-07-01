@@ -45,7 +45,7 @@ jobs:
           command: make test
 
   docker-publish:
-    working_directory: /go/src/github.com/illfate/social-tournaments-service
+    working_directory: ~/go/src/github.com/illfate/social-tournaments-service
     docker:
       - image: circleci/buildpack-deps:stretch
     steps:
