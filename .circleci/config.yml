@@ -44,7 +44,7 @@ jobs:
           name: Run tests
           command: make test
 
-  docker-publisher:
+  docker-publish:
     docker:
       - image: circleci/buildpack-deps:stretch
     steps:
@@ -66,7 +66,7 @@ workflows:
       - test :
           requires:
             - build
-      - docker-publish :
+      - docker-publish:
           requires:
             - test
           filters:
