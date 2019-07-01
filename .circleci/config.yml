@@ -45,9 +45,11 @@ jobs:
           command: make test
 
   docker-publish:
+    working_directory: /go/src/github.com/illfate/social-tournaments-service
     docker:
       - image: circleci/buildpack-deps:stretch
     steps:
+      - checkout
       - run:
           name: Log in docker hub
           command: docker login -u $DOCKER_HUB_USERNAME -p $DOCKER_HUB_PWD
