@@ -6,7 +6,7 @@ dep:
 	go get -d github.com/go-sql-driver/mysql 
 	go get -d github.com/gorilla/mux
 	go get -d github.com/stretchr/testify/mock
-	go get -d github.com/pressly/goose/cmd/goose
+	go get github.com/pressly/goose/cmd/goose
 
 .PHONY: test
 test:
