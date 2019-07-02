@@ -39,7 +39,9 @@ jobs:
           command: sudo apt-get install mysql-client
       - run:
           name: Import data
-          command: goose mysql "root:@/social_tournament" up-to 20190702113247
+          command: |
+            mysql -u root -h 127.0.0.1 -e "CREATE DATABASE social_tournament"
+            goose mysql "root:@/social_tournament" up-to 20190702113247
       - run:
           name: Run tests
           command: make test
