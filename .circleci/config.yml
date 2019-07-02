@@ -39,7 +39,7 @@ jobs:
           command: sudo apt-get install mysql-client
       - run:
           name: Import data
-          command: cat sql/user.sql sql/tournament.sql | mysql -uroot -h 127.0.0.1
+           command: goose mysql "root:@/social_tournament" up-to 20190702113247
       - run:
           name: Run tests
           command: make test
