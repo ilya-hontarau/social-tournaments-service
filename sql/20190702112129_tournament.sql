@@ -10,7 +10,6 @@ CREATE TABLE tournaments (
      FOREIGN KEY(winner) REFERENCES users(id),
      PRIMARY KEY(id)
 );
-
 -- +goose StatementEnd
 
 -- +goose Down
