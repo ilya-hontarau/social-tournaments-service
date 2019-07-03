@@ -1,3 +1,7 @@
+service:
+  prepare:
+    - export GO111MODULE=on
+
 run:
   modules-download-mode: vendor
 
