@@ -1,3 +1,6 @@
+run:
+  modules-download-mode: vendor
+
 inters-settings:
   errcheck:
     # report about not checking of errors in type assetions: `a := b.(MyStruct)`;
