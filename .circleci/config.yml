@@ -5,7 +5,7 @@ jobs:
     docker:
       - image: circleci/golang:latest
         environment:
-          GO111MODULE: on
+          GO111MODULE: "ON"
     steps:
       - checkout
       - run:
