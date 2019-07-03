@@ -19,6 +19,8 @@ jobs:
     working_directory: /go/src/github.com/illfate/social-tournaments-service
     docker: 
       - image: circleci/golang:latest
+        environment:
+          GO111MODULE: "on"
       - image: circleci/mysql:5.7.26
     steps:
       - checkout
