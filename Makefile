@@ -1,22 +1,20 @@
 bin/sts:
-	go build -ldflags "-linkmode external -extldflags -static" -o bin/sts ./cmd/sts
+	go build -mod vendor -ldflags "-linkmode external -extldflags -static" -o bin/sts ./cmd/sts
 
 .PHONY: dep
 dep: 
-	go get -d github.com/go-sql-driver/mysql 
-	go get -d github.com/gorilla/mux
-	go get -d github.com/stretchr/testify/mock
-	go get github.com/pressly/goose/cmd/goose
+	go mod tidy 
+	go mod vendor
 
 .PHONY: test
 test:
-	go test -v -coverprofile=cover.out ./...
+	go test -v -mod vendor -coverprofile=cover.out ./... 
 
 .PHONY: lint
 lint:
-	golangci-lint run
+	golangci-lint run --config .golangci.local.yml
 
 .PHONY: clean
 clean:
 	rm -rf bin
-	go clean
+	go clean -mod vendor
