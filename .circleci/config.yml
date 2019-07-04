@@ -17,8 +17,6 @@ jobs:
     working_directory: ~/social-tournaments-service
     docker: 
       - image: circleci/golang:latest
-        environment:
-          GO111MODULE: "on"
       - image: circleci/mysql:5.7.26
     steps:
       - checkout
