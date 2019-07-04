@@ -1,7 +1,7 @@
 version: 2
 jobs:
   build:
-    working_directory: /social-tournaments-service
+    working_directory: ~/social-tournaments-service
     docker:
       - image: circleci/golang:latest
     steps:
@@ -14,7 +14,7 @@ jobs:
           command: make
 
   test:
-    working_directory: /social-tournaments-service
+    working_directory: ~/social-tournaments-service
     docker: 
       - image: circleci/golang:latest
         environment:
@@ -52,7 +52,7 @@ jobs:
           command: make test
 
   docker-publish:
-    working_directory: /social-tournaments-service
+    working_directory: ~/social-tournaments-service
     docker:
       - image: circleci/buildpack-deps:stretch
     steps:
