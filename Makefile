@@ -12,7 +12,7 @@ test:
 
 .PHONY: lint
 lint:
-	golangci-lint run
+	golangci-lint run --config .golangci.local.yml
 
 .PHONY: clean
 clean:
