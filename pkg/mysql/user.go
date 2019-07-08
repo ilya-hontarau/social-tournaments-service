@@ -13,7 +13,7 @@ import (
 func (c *Connector) AddUser(ctx context.Context, name string) (int64, error) {
 	insert, err := c.db.ExecContext(ctx, `
  INSERT INTO users (name) 
-VALUES (?)`,
+      VALUES (?)`,
 		name)
 	if err != nil {
 		return 0, fmt.Errorf("couldn't add user: %s", err)
@@ -28,11 +28,10 @@ VALUES (?)`,
 // GetUser returns user with passed id. If user isn't found, function returns ErrNotFound.
 func (c *Connector) GetUser(ctx context.Context, id int64) (*sts.User, error) {
 	var user sts.User
-	err := c.db.QueryRowContext(ctx, `
+	err := c.db.GetContext(ctx, &user, `
 SELECT id, name, balance 
   FROM users 
- WHERE id = ?`, id).
-		Scan(&user.ID, &user.Name, &user.Balance)
+ WHERE id = ?`, id)
 	if err == sql.ErrNoRows {
 		return nil, sts.ErrNotFound
 	}

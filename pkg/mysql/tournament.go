@@ -36,11 +36,11 @@ func (c *Connector) GetTournament(ctx context.Context, id int64) (*sts.Tournamen
 		t        sts.Tournament
 	)
 	err := c.db.QueryRowContext(ctx, `
-    SELECT id, name, deposit, prize, winner, finished, JSON_ARRAYAGG(user_id)
-      FROM tournaments
- LEFT JOIN participants ON id = tournament_id 
-     WHERE id = ?
-  GROUP BY id`, id).
+	  SELECT id, name, deposit, prize, winner, finished, JSON_ARRAYAGG(user_id)
+	    FROM tournaments
+   LEFT JOIN participants ON id = tournament_id
+	   WHERE id = ?
+	GROUP BY id`, id).
 		Scan(&t.ID, &t.Name, &t.Deposit, &t.Prize, &winner, &finished, &users)
 	if err == sql.ErrNoRows {
 		return nil, sts.ErrNotFound
@@ -65,7 +65,7 @@ func (c *Connector) GetTournament(ctx context.Context, id int64) (*sts.Tournamen
 // JoinTournament adds user with passed userID to tournament with passed tournamentID.
 // If tournament or user isn't found, function returns ErrNotFound.
 func (c *Connector) JoinTournament(ctx context.Context, tournamentID, userID int64) error {
-	tx, err := c.db.BeginTx(ctx, nil)
+	tx, err := c.db.BeginTxx(ctx, nil)
 	if err != nil {
 		return err
 	}
@@ -91,8 +91,8 @@ func (c *Connector) JoinTournament(ctx context.Context, tournamentID, userID int
 
 	update, err := tx.ExecContext(ctx, `
     UPDATE users
-    SET balance = balance - ?
-    WHERE id = ?`, t.Deposit, userID)
+       SET balance = balance - ?
+     WHERE id = ?`, t.Deposit, userID)
 	if err != nil {
 		return fmt.Errorf("couldn't update user balance: %s", err)
 	}
@@ -106,15 +106,15 @@ func (c *Connector) JoinTournament(ctx context.Context, tournamentID, userID int
 
 	_, err = tx.ExecContext(ctx, `
     UPDATE tournaments
-    SET prize = prize + deposit
-    WHERE id = ?`, tournamentID)
+       SET prize = prize + deposit
+     WHERE id = ?`, tournamentID)
 	if err != nil {
 		return fmt.Errorf("couldn't increase tournament prize: %s", err)
 	}
 
 	_, err = tx.ExecContext(ctx, `
 	INSERT INTO participants(user_id,tournament_id) 
-	VALUES(?,?)`, userID, tournamentID)
+	     VALUES (?,?)`, userID, tournamentID)
 	if err != nil {
 		return fmt.Errorf("couldn't add user to tournament: %s", err)
 	}
