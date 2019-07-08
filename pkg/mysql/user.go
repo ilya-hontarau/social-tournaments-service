@@ -13,7 +13,7 @@ import (
 func (c *Connector) AddUser(ctx context.Context, name string) (int64, error) {
 	insert, err := c.db.ExecContext(ctx, `
  INSERT INTO users (name) 
-VALUES (?)`,
+      VALUES (?)`,
 		name)
 	if err != nil {
 		return 0, fmt.Errorf("couldn't add user: %s", err)
