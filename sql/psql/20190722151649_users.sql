@@ -3,8 +3,8 @@
 CREATE TABLE users
 (
     id      SERIAL,
-    name    TEXT,
-    balance BIGINT DEFAULT 0 CHECK (balance >= 0),
+    name    TEXT NOT NULL ,
+    balance BIGINT NOT NULL DEFAULT 0 CHECK (balance >= 0),
     PRIMARY KEY (id)
 );
 -- +goose StatementEnd
