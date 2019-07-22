@@ -8,8 +8,9 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/illfate/social-tournaments-service/pkg/psql"
+
 	"github.com/gorilla/mux"
-	"github.com/illfate/social-tournaments-service/pkg/mysql"
 	"github.com/illfate/social-tournaments-service/pkg/sts"
 )
 
@@ -56,7 +57,7 @@ func main() {
 		return
 	}
 
-	db, err := mysql.New(dbUser, dbPass, dbName)
+	db, err := psql.New(dbUser, dbPass, dbName)
 	if err != nil {
 		log.Print(err)
 		return
