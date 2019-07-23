@@ -3,7 +3,6 @@ package psql
 import (
 	"context"
 	"database/sql"
-	"log"
 
 	"github.com/pkg/errors"
 
@@ -34,7 +33,6 @@ WHERE id = $1`, id)
 		return nil, sts.ErrNotFound
 	}
 	if err != nil {
-		log.Print(err)
 		return nil, errors.Wrap(err, "couldn't get user")
 	}
 	return &user, nil
@@ -51,7 +49,7 @@ func (db *DB) DeleteUser(ctx context.Context, id int64) error {
 	}
 	rows, err := delete.RowsAffected()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "couldn't get affected rows")
 	}
 	if rows == 0 {
 		return sts.ErrNotFound

@@ -62,7 +62,7 @@ GROUP BY t.id`, id).
 func (db *DB) JoinTournament(ctx context.Context, tournamentID, userID int64) error {
 	tx, err := db.conn.BeginTxx(ctx, nil)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "couldn't begin transaction")
 	}
 	defer tx.Rollback()
 	var (
@@ -113,5 +113,5 @@ INSERT INTO	participants(user_id, tournament_id)
 	if err != nil {
 		return errors.Wrap(err, "couldn't add user to tournament")
 	}
-	return tx.Commit()
+	return errors.Wrap(tx.Commit(), "couldn't commit transaction")
 }
