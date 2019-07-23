@@ -21,7 +21,7 @@ func New(dbUser, dbPass, dbName string) (*DB, error) {
 	}
 	return &DB{
 		conn: db,
-	}, err
+	}, nil
 }
 
 func (db *DB) Close() {
