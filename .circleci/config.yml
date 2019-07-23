@@ -17,34 +17,8 @@ jobs:
     working_directory: ~/social-tournaments-service
     docker: 
       - image: circleci/golang:latest
-      - image: circleci/mysql:5.7.26
     steps:
       - checkout
-      - run:
-          name: Fetch dependencies
-          command: make dep
-      - run:
-      # Our primary container isn't MYSQL so run a sleep command until it's ready.
-          name: Waiting for MySQL to be ready
-          command: |
-            for i in `seq 1 10`;
-            do
-              nc -z 127.0.0.1 3306 && echo Success && exit 0
-              echo -n .
-              sleep 1
-            done
-            echo Failed waiting for MySQL && exit 1
-      - run:
-          name:  Install mysql client
-          command: sudo apt-get install mysql-client
-      - run:
-          name: Install goose
-          command: go get github.com/pressly/goose/cmd/goose
-      - run:
-          name: Import data
-          command: |
-            mysql -u root -h 127.0.0.1 -e "CREATE DATABASE social_tournament"
-            goose mysql "root:@/social_tournament" up-to 20190702113247
       - run:
           name: Run tests
           command: make test
