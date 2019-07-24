@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -12,13 +11,25 @@ import (
 )
 
 const (
-	port         = "PORT"
-	userEnvVar   = "DB_USER"
-	passEnvVar   = "DB_PASS"
-	dbNameEnvVar = "DB_NAME"
+	port                 = "PORT"
+	userEnvVar           = "DB_USER"
+	passEnvVar           = "DB_PASS"
+	dbNameEnvVar         = "DB_NAME"
+	userSchemeFile       = "USER_SCHEME_FILE"
+	tournamentSchemeFile = "TOURNAMENT_SCHEME_FILE"
 )
 
 func main() {
+	uScheme := os.Getenv(userSchemeFile)
+	if uScheme == "" {
+		log.Printf(`no "%s" env variable`, userSchemeFile)
+		return
+	}
+	tScheme := os.Getenv(tournamentSchemeFile)
+	if tScheme == "" {
+		log.Printf(`no "%s" env variable`, tournamentSchemeFile)
+		return
+	}
 	portNum := os.Getenv(port)
 	if portNum == "" {
 		log.Printf(`no "%s" env variable`, port)
@@ -26,13 +37,13 @@ func main() {
 	}
 	dbUser := os.Getenv(userEnvVar)
 	if dbUser == "" {
-		log.Print(fmt.Errorf(`no "%s" env variable`, userEnvVar))
+		log.Printf(`no "%s" env variable`, userEnvVar)
 		return
 	}
 	dbPass := os.Getenv(passEnvVar)
 	dbName := os.Getenv(dbNameEnvVar)
 	if dbName == "" {
-		log.Print(fmt.Errorf(`no "%s" env variable`, dbNameEnvVar))
+		log.Printf(`no "%s" env variable`, dbNameEnvVar)
 		return
 	}
 
@@ -43,8 +54,7 @@ func main() {
 	}
 	defer db.Close()
 
-	// todo app flag or env
-	s, err := graphql.NewResolver(db, "sts.graphql")
+	s, err := graphql.NewResolver(db, "user.graphql", "tournament.graphql")
 	if err != nil {
 		log.Printf("couldn't start graphql: %s", err)
 		return

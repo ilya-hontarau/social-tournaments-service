@@ -8,7 +8,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (r *Resolver) User(ctx context.Context, args struct{ ID graphql.ID }) (*userResolver, error) {
+type userArgs struct {
+	ID graphql.ID
+}
+
+func (r *Resolver) User(ctx context.Context, args userArgs) (*userResolver, error) {
 	id, err := decodeID(args.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't decode id [%s]", args.ID)
@@ -17,10 +21,16 @@ func (r *Resolver) User(ctx context.Context, args struct{ ID graphql.ID }) (*use
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't get user [%d]", id)
 	}
-	return &userResolver{*user}, nil
+	return &userResolver{
+		user: *user,
+	}, nil
 }
 
-func (r *Resolver) CreateUser(ctx context.Context, args struct{ Name string }) (*userResolver, error) {
+type createUserArgs struct {
+	Name string
+}
+
+func (r *Resolver) CreateUser(ctx context.Context, args createUserArgs) (*userResolver, error) {
 	id, err := r.s.AddUser(ctx, args.Name)
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't add user [%s]", args.Name)
@@ -32,7 +42,7 @@ func (r *Resolver) CreateUser(ctx context.Context, args struct{ Name string }) (
 	}}, nil
 }
 
-func (r *Resolver) DeleteUser(ctx context.Context, args struct{ ID graphql.ID }) (*graphql.ID, error) {
+func (r *Resolver) DeleteUser(ctx context.Context, args userArgs) (*graphql.ID, error) {
 	id, err := decodeID(args.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't decode id [%s]", args.ID)
@@ -44,10 +54,12 @@ func (r *Resolver) DeleteUser(ctx context.Context, args struct{ ID graphql.ID })
 	return &args.ID, nil
 }
 
-func (r *Resolver) TakeUserPoints(ctx context.Context, args struct {
+type userPointsArgs struct {
 	ID     graphql.ID
 	Points int32
-}) (*userResolver, error) {
+}
+
+func (r *Resolver) TakeUserPoints(ctx context.Context, args userPointsArgs) (*userResolver, error) {
 	id, err := decodeID(args.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't decode id [%s]", args.ID)
@@ -57,17 +69,16 @@ func (r *Resolver) TakeUserPoints(ctx context.Context, args struct {
 		return nil, errors.Wrapf(err, "couldn't take points from user [%s]", id)
 	}
 
-	result, err := r.User(ctx, struct{ ID graphql.ID }{ID: args.ID})
+	result, err := r.User(ctx, userArgs{
+		ID: args.ID,
+	})
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't get user [%d]", id)
 	}
 	return result, nil
 }
 
-func (r *Resolver) AddUserPoints(ctx context.Context, args struct {
-	ID     graphql.ID
-	Points int32
-}) (*userResolver, error) {
+func (r *Resolver) AddUserPoints(ctx context.Context, args userPointsArgs) (*userResolver, error) {
 	id, err := decodeID(args.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't decode id [%s]", args.ID)
@@ -77,7 +88,9 @@ func (r *Resolver) AddUserPoints(ctx context.Context, args struct {
 		return nil, errors.Wrapf(err, "couldn't add points to user [%s]", id)
 	}
 
-	result, err := r.User(ctx, struct{ ID graphql.ID }{ID: args.ID})
+	result, err := r.User(ctx, userArgs{
+		ID: args.ID,
+	})
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't get user [%d]", id)
 	}

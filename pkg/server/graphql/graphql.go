@@ -16,24 +16,24 @@ type Resolver struct {
 	http.Handler
 }
 
-func NewResolver(db sts.Service, _ string) (*Resolver, error) {
-	toutnBytes, err := ioutil.ReadFile("sts.graphql")
+func NewResolver(db sts.Service, userSchemeFile, tournamentSchemeFile string) (*Resolver, error) {
+	tournamentBytes, err := ioutil.ReadFile(tournamentSchemeFile)
 	if err != nil {
-		return nil, errors.Wrap(err, "foobar")
+		return nil, errors.Wrap(err, "couldn't read tournament graphql schema")
 	}
-	userBytes, err := ioutil.ReadFile("sts-user.graphql")
+	userBytes, err := ioutil.ReadFile(userSchemeFile)
 	if err != nil {
-		return nil, errors.Wrap(err, "foobar")
+		return nil, errors.Wrap(err, "couldn't read user graphql schema")
 	}
 
 	var resolver Resolver
-	tSchema, err := graphql.ParseSchema(string(toutnBytes), &resolver)
+	tSchema, err := graphql.ParseSchema(string(tournamentBytes), &resolver)
 	if err != nil {
-		return nil, errors.Wrap(err, "couldn't parse schema")
+		return nil, errors.Wrap(err, "couldn't parse tournament schema")
 	}
 	uSchema, err := graphql.ParseSchema(string(userBytes), &resolver)
 	if err != nil {
-		return nil, errors.Wrap(err, "couldn't parse schema")
+		return nil, errors.Wrap(err, "couldn't parse user schema")
 	}
 
 	t := func(w http.ResponseWriter, req *http.Request) {

@@ -8,7 +8,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (r *Resolver) Tournament(ctx context.Context, args struct{ ID graphql.ID }) (*tournamentResolver, error) {
+type tournamentArgs struct {
+	ID graphql.ID
+}
+
+func (r *Resolver) Tournament(ctx context.Context, args tournamentArgs) (*tournamentResolver, error) {
 	id, err := decodeID(args.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't decode id [%s]", args.ID)
@@ -39,10 +43,12 @@ func (r *Resolver) CreateTournament(ctx context.Context, args createTournamentsA
 	}}, nil
 }
 
-func (r *Resolver) JoinTournament(ctx context.Context, args struct {
+type joinTournamentArgs struct {
 	ID     graphql.ID
 	UserID graphql.ID
-}) (*tournamentResolver, error) {
+}
+
+func (r *Resolver) JoinTournament(ctx context.Context, args joinTournamentArgs) (*tournamentResolver, error) {
 	tID, err := decodeID(args.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't decode tournament id [%s]", args.ID)
@@ -55,9 +61,9 @@ func (r *Resolver) JoinTournament(ctx context.Context, args struct {
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't join tournament [%d]", tID)
 	}
-	result, err := r.Tournament(ctx, struct {
-		ID graphql.ID
-	}{args.ID})
+	result, err := r.Tournament(ctx, tournamentArgs{
+		ID: args.ID,
+	})
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't get tournament [%s]", tID)
 	}
