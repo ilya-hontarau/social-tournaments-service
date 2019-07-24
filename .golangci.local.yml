@@ -44,3 +44,6 @@ issues:
     - linters:
         - errcheck
       text: "tx.Rollback()"
+    - path: grapql/
+      linters:
+        - golint

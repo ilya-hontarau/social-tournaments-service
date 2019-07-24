@@ -65,7 +65,7 @@ func (r *Resolver) JoinTournament(ctx context.Context, args joinTournamentArgs) 
 		ID: args.ID,
 	})
 	if err != nil {
-		return nil, errors.Wrapf(err, "couldn't get tournament [%s]", tID)
+		return nil, errors.Wrapf(err, "couldn't get tournament [%s]", args.ID)
 	}
 	return result, nil
 }
@@ -96,7 +96,7 @@ func (tr *tournamentResolver) Winner() *graphql.ID {
 }
 
 func (tr *tournamentResolver) Users() *[]*graphql.ID {
-	var idSlice []*graphql.ID
+	idSlice := make([]*graphql.ID, 0, len(tr.tournament.Users))
 	for _, id := range tr.tournament.Users {
 		id := encodeID(id)
 		idSlice = append(idSlice, &id)

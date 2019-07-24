@@ -66,7 +66,7 @@ func (r *Resolver) TakeUserPoints(ctx context.Context, args userPointsArgs) (*us
 	}
 	err = r.s.AddPoints(ctx, id, int64(-args.Points))
 	if err != nil {
-		return nil, errors.Wrapf(err, "couldn't take points from user [%s]", id)
+		return nil, errors.Wrapf(err, "couldn't take points from user [%d]", id)
 	}
 
 	result, err := r.User(ctx, userArgs{
@@ -85,7 +85,7 @@ func (r *Resolver) AddUserPoints(ctx context.Context, args userPointsArgs) (*use
 	}
 	err = r.s.AddPoints(ctx, id, int64(args.Points))
 	if err != nil {
-		return nil, errors.Wrapf(err, "couldn't add points to user [%s]", id)
+		return nil, errors.Wrapf(err, "couldn't add points to user [%d]", id)
 	}
 
 	result, err := r.User(ctx, userArgs{
