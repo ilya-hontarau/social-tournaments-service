@@ -5,7 +5,7 @@ go 1.12
 require (
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/gorilla/mux v1.7.3
-	github.com/graph-gophers/graphql-go v0.0.0-20190610161739-8f92f34fc598 // indirect
+	github.com/graph-gophers/graphql-go v0.0.0-20190610161739-8f92f34fc598
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/lib/pq v1.0.0
 	github.com/pkg/errors v0.8.1

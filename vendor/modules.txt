@@ -4,12 +4,31 @@ github.com/davecgh/go-spew/spew
 github.com/go-sql-driver/mysql
 # github.com/gorilla/mux v1.7.3
 github.com/gorilla/mux
+# github.com/graph-gophers/graphql-go v0.0.0-20190610161739-8f92f34fc598
+github.com/graph-gophers/graphql-go
+github.com/graph-gophers/graphql-go/relay
+github.com/graph-gophers/graphql-go/errors
+github.com/graph-gophers/graphql-go/internal/common
+github.com/graph-gophers/graphql-go/internal/exec
+github.com/graph-gophers/graphql-go/internal/exec/resolvable
+github.com/graph-gophers/graphql-go/internal/exec/selected
+github.com/graph-gophers/graphql-go/internal/query
+github.com/graph-gophers/graphql-go/internal/schema
+github.com/graph-gophers/graphql-go/internal/validation
+github.com/graph-gophers/graphql-go/introspection
+github.com/graph-gophers/graphql-go/log
+github.com/graph-gophers/graphql-go/trace
+github.com/graph-gophers/graphql-go/internal/exec/packer
 # github.com/jmoiron/sqlx v1.2.0
 github.com/jmoiron/sqlx
 github.com/jmoiron/sqlx/reflectx
 # github.com/lib/pq v1.0.0
 github.com/lib/pq
 github.com/lib/pq/oid
+# github.com/opentracing/opentracing-go v1.1.0
+github.com/opentracing/opentracing-go
+github.com/opentracing/opentracing-go/ext
+github.com/opentracing/opentracing-go/log
 # github.com/pkg/errors v0.8.1
 github.com/pkg/errors
 # github.com/pmezard/go-difflib v1.0.0
