@@ -70,9 +70,9 @@ func (db *DB) JoinTournament(ctx context.Context, tournamentID, userID int64) er
 		t        sts.Tournament
 	)
 	err = tx.QueryRowContext(ctx, `
-  SELECT id, name, deposit, prize, finished
-    FROM tournaments
-WHERE  id = $1`, tournamentID).
+SELECT id, name, deposit, prize, finished
+  FROM tournaments
+ WHERE id = $1`, tournamentID).
 		Scan(&t.ID, &t.Name, &t.Deposit, &t.Prize, &finished)
 	if err == sql.ErrNoRows {
 		return sts.ErrNotFound

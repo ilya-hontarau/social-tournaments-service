@@ -1,0 +1,22 @@
+schema {
+    query: Query
+    mutation: Mutation
+}
+
+type Query {
+    tournament(id: ID!): Tournament
+}
+
+type Mutation {
+    createTournament(name: String!,deposit: Int!): Tournament
+    joinTournament(id: ID!, userID: ID!): Tournament
+}
+
+type Tournament {
+    id: ID!
+    name: String!
+    deposit: Int!
+    prize: Int!
+    winner:  ID
+    users:   [ID]
+}

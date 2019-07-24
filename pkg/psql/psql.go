@@ -24,6 +24,6 @@ func New(dbUser, dbPass, dbName string) (*DB, error) {
 	}, nil
 }
 
-func (db *DB) Close() {
-	db.conn.Close()
+func (db *DB) Close() error {
+	return db.conn.Close()
 }
