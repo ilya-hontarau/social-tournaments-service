@@ -13,9 +13,9 @@ import (
 func (db *DB) AddUser(ctx context.Context, name string) (int64, error) {
 	var id int64
 	err := db.conn.QueryRowContext(ctx, `
- INSERT INTO users (name) 
-           VALUES ($1)
-   RETURNING id`, name).Scan(&id)
+INSERT INTO users (name) 
+     VALUES ($1)
+  RETURNING id`, name).Scan(&id)
 	if err != nil {
 		return 0, errors.Wrap(err, "couldn't add user")
 	}
@@ -28,7 +28,7 @@ func (db *DB) GetUser(ctx context.Context, id int64) (*sts.User, error) {
 	err := db.conn.GetContext(ctx, &user, `
 SELECT id, name, balance 
   FROM users 
-WHERE id = $1`, id)
+ WHERE id = $1`, id)
 	if err == sql.ErrNoRows {
 		return nil, sts.ErrNotFound
 	}
@@ -41,9 +41,9 @@ WHERE id = $1`, id)
 // DeleteUser deletes user with passed id. If user isn't found, function returns ErrNotFound.
 func (db *DB) DeleteUser(ctx context.Context, id int64) error {
 	delete, err := db.conn.ExecContext(ctx, `
-	DELETE
-	   FROM users
-	 WHERE id = $1`, id)
+DELETE
+ FROM users
+WHERE id = $1`, id)
 	if err != nil {
 		return errors.Wrap(err, "couldn't delete user")
 	}
@@ -60,9 +60,9 @@ func (db *DB) DeleteUser(ctx context.Context, id int64) error {
 // AddPoints adds points to user with passed id. If user isn't found, function returns ErrNotFound.
 func (db *DB) AddPoints(ctx context.Context, id, points int64) error {
 	update, err := db.conn.ExecContext(ctx, `
- UPDATE users 
-	      SET balance = balance + $1 
-  WHERE id = $2`, points, id)
+UPDATE users 
+   SET balance = balance + $1 
+ WHERE id = $2`, points, id)
 	if err != nil {
 		return errors.Wrap(err, "couldn't update balance")
 	}
