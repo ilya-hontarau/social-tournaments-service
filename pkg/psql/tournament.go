@@ -13,8 +13,8 @@ import (
 func (db *DB) AddTournament(ctx context.Context, name string, deposit uint64) (int64, error) {
 	var id int64
 	err := db.conn.QueryRowContext(ctx, `
- INSERT INTO tournaments (name,deposit)
- 	      VALUES ($1, $2)
+INSERT INTO tournaments (name,deposit)
+	 VALUES ($1, $2)
   RETURNING id`, name, deposit).Scan(&id)
 	if err != nil {
 		return 0, errors.Wrap(err, "couldn't add tournament")
@@ -32,11 +32,11 @@ func (db *DB) GetTournament(ctx context.Context, id int64) (*sts.Tournament, err
 		t        sts.Tournament
 	)
 	err := db.conn.QueryRowContext(ctx, `
-       SELECT id, name, deposit, prize, winner, finished, json_agg(user_id)
-         FROM tournaments as t
+   SELECT id, name, deposit, prize, winner, finished, json_agg(user_id)
+	 FROM tournaments as t
 LEFT JOIN participants as p on t.id = p.tournament_id
-      WHERE t.id = $1
-GROUP BY t.id`, id).
+	WHERE t.id = $1
+ GROUP BY t.id`, id).
 		Scan(&t.ID, &t.Name, &t.Deposit, &t.Prize, &winner, &finished, &users)
 	if err == sql.ErrNoRows {
 		return nil, sts.ErrNotFound
@@ -70,9 +70,9 @@ func (db *DB) JoinTournament(ctx context.Context, tournamentID, userID int64) er
 		t        sts.Tournament
 	)
 	err = tx.QueryRowContext(ctx, `
-  SELECT id, name, deposit, prize, finished
-    FROM tournaments
-WHERE  id = $1`, tournamentID).
+SELECT id, name, deposit, prize, finished
+  FROM tournaments
+ WHERE id = $1`, tournamentID).
 		Scan(&t.ID, &t.Name, &t.Deposit, &t.Prize, &finished)
 	if err == sql.ErrNoRows {
 		return sts.ErrNotFound
@@ -86,7 +86,7 @@ WHERE  id = $1`, tournamentID).
 
 	update, err := tx.ExecContext(ctx, `
 UPDATE users
-         SET balance = balance - $1
+   SET balance = balance - $1
  WHERE id = $2`, t.Deposit, userID)
 	if err != nil {
 		return errors.Wrap(err, "couldn't update user balance: %s")
@@ -101,7 +101,7 @@ UPDATE users
 
 	_, err = tx.ExecContext(ctx, `
 UPDATE tournaments
-         SET prize = prize + deposit
+   SET prize = prize + deposit
  WHERE id = $1`, tournamentID)
 	if err != nil {
 		return errors.Wrap(err, "couldn't increase tournament prize")
@@ -109,7 +109,7 @@ UPDATE tournaments
 
 	_, err = tx.ExecContext(ctx, `
 INSERT INTO	participants(user_id, tournament_id)
-         VALUES ($1, $2)`, userID, tournamentID)
+     VALUES ($1, $2)`, userID, tournamentID)
 	if err != nil {
 		return errors.Wrap(err, "couldn't add user to tournament")
 	}
