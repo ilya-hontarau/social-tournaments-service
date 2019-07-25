@@ -12,7 +12,7 @@ type userArgs struct {
 	ID graphql.ID
 }
 
-func (r *Resolver) User(ctx context.Context, args userArgs) (*userResolver, error) {
+func (r *Resolver) User(ctx context.Context, args userArgs) (*UserResolver, error) {
 	id, err := decodeID(args.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't decode id [%s]", args.ID)
@@ -21,7 +21,7 @@ func (r *Resolver) User(ctx context.Context, args userArgs) (*userResolver, erro
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't get user [%d]", id)
 	}
-	return &userResolver{
+	return &UserResolver{
 		user: *user,
 	}, nil
 }
@@ -30,12 +30,12 @@ type createUserArgs struct {
 	Name string
 }
 
-func (r *Resolver) CreateUser(ctx context.Context, args createUserArgs) (*userResolver, error) {
+func (r *Resolver) CreateUser(ctx context.Context, args createUserArgs) (*UserResolver, error) {
 	id, err := r.s.AddUser(ctx, args.Name)
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't add user [%s]", args.Name)
 	}
-	return &userResolver{sts.User{
+	return &UserResolver{sts.User{
 		ID:      id,
 		Name:    args.Name,
 		Balance: 0,
@@ -59,7 +59,7 @@ type userPointsArgs struct {
 	Points int32
 }
 
-func (r *Resolver) TakeUserPoints(ctx context.Context, args userPointsArgs) (*userResolver, error) {
+func (r *Resolver) TakeUserPoints(ctx context.Context, args userPointsArgs) (*UserResolver, error) {
 	id, err := decodeID(args.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't decode id [%s]", args.ID)
@@ -78,7 +78,7 @@ func (r *Resolver) TakeUserPoints(ctx context.Context, args userPointsArgs) (*us
 	return result, nil
 }
 
-func (r *Resolver) AddUserPoints(ctx context.Context, args userPointsArgs) (*userResolver, error) {
+func (r *Resolver) AddUserPoints(ctx context.Context, args userPointsArgs) (*UserResolver, error) {
 	id, err := decodeID(args.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't decode id [%s]", args.ID)
@@ -97,18 +97,18 @@ func (r *Resolver) AddUserPoints(ctx context.Context, args userPointsArgs) (*use
 	return result, nil
 }
 
-type userResolver struct {
+type UserResolver struct {
 	user sts.User
 }
 
-func (ur *userResolver) ID() graphql.ID {
+func (ur *UserResolver) ID() graphql.ID {
 	return encodeID(ur.user.ID)
 }
 
-func (ur *userResolver) Name() string {
+func (ur *UserResolver) Name() string {
 	return ur.user.Name
 }
 
-func (ur *userResolver) Balance() int32 {
+func (ur *UserResolver) Balance() int32 {
 	return int32(ur.user.Balance)
 }

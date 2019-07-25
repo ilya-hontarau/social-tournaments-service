@@ -44,6 +44,3 @@ issues:
     - linters:
         - errcheck
       text: "tx.Rollback()"
-    - path: graphql/
-      linters:
-        - golint

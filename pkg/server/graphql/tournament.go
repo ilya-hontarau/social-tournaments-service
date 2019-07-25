@@ -12,7 +12,7 @@ type tournamentArgs struct {
 	ID graphql.ID
 }
 
-func (r *Resolver) Tournament(ctx context.Context, args tournamentArgs) (*tournamentResolver, error) {
+func (r *Resolver) Tournament(ctx context.Context, args tournamentArgs) (*TournamentResolver, error) {
 	id, err := decodeID(args.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't decode id [%s]", args.ID)
@@ -21,7 +21,7 @@ func (r *Resolver) Tournament(ctx context.Context, args tournamentArgs) (*tourna
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't get tournament [%d]", id)
 	}
-	return &tournamentResolver{
+	return &TournamentResolver{
 		tournament: *t,
 	}, nil
 }
@@ -31,12 +31,12 @@ type createTournamentsArgs struct {
 	Deposit int32
 }
 
-func (r *Resolver) CreateTournament(ctx context.Context, args createTournamentsArgs) (*tournamentResolver, error) {
+func (r *Resolver) CreateTournament(ctx context.Context, args createTournamentsArgs) (*TournamentResolver, error) {
 	id, err := r.s.AddTournament(ctx, args.Name, uint64(args.Deposit))
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't add tournament [%s]", args.Name)
 	}
-	return &tournamentResolver{sts.Tournament{
+	return &TournamentResolver{sts.Tournament{
 		ID:      id,
 		Name:    args.Name,
 		Deposit: uint64(args.Deposit),
@@ -48,7 +48,7 @@ type joinTournamentArgs struct {
 	UserID graphql.ID
 }
 
-func (r *Resolver) JoinTournament(ctx context.Context, args joinTournamentArgs) (*tournamentResolver, error) {
+func (r *Resolver) JoinTournament(ctx context.Context, args joinTournamentArgs) (*TournamentResolver, error) {
 	tID, err := decodeID(args.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't decode tournament id [%s]", args.ID)
@@ -70,32 +70,32 @@ func (r *Resolver) JoinTournament(ctx context.Context, args joinTournamentArgs) 
 	return result, nil
 }
 
-type tournamentResolver struct {
+type TournamentResolver struct {
 	tournament sts.Tournament
 }
 
-func (tr *tournamentResolver) ID() graphql.ID {
+func (tr *TournamentResolver) ID() graphql.ID {
 	return encodeID(tr.tournament.ID)
 }
 
-func (tr *tournamentResolver) Name() string {
+func (tr *TournamentResolver) Name() string {
 	return tr.tournament.Name
 }
 
-func (tr *tournamentResolver) Deposit() int32 {
+func (tr *TournamentResolver) Deposit() int32 {
 	return int32(tr.tournament.Deposit)
 }
 
-func (tr *tournamentResolver) Prize() int32 {
+func (tr *TournamentResolver) Prize() int32 {
 	return int32(tr.tournament.Prize)
 }
 
-func (tr *tournamentResolver) Winner() *graphql.ID {
+func (tr *TournamentResolver) Winner() *graphql.ID {
 	id := encodeID(tr.tournament.Winner)
 	return &id
 }
 
-func (tr *tournamentResolver) Users() *[]*graphql.ID {
+func (tr *TournamentResolver) Users() *[]*graphql.ID {
 	idSlice := make([]*graphql.ID, 0, len(tr.tournament.Users))
 	for _, id := range tr.tournament.Users {
 		id := encodeID(id)
