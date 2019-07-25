@@ -1,0 +1,25 @@
+version: "3.4"
+services:
+  web:
+    build: .
+    ports:
+      - 8080:8080
+    depends_on:
+      - db
+    environment:
+      DB_USER: user
+      DB_PASS: 1234
+      DB_HOST: psql
+      DB_NAME: social-tournament
+      USER_SCHEME_FILE: user.graphql
+      TOURNAMENT_SCHEME_FILE: tournament.graphql
+  db:
+    container_name: psql
+    image: postgres:10.9
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_USER: user
+      POSTGRES_DB: social-tournament
+    ports:
+      - 5432:5432

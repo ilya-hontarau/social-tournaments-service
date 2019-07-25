@@ -14,8 +14,9 @@ type DB struct {
 	conn *sqlx.DB
 }
 
-func New(dbUser, dbPass, dbName string) (*DB, error) {
-	db, err := sqlx.Connect("postgres", fmt.Sprintf("user=%s password=%s dbname=%s", dbUser, dbPass, dbName))
+func New(dbUser, dbHost, dbPass, dbName string) (*DB, error) {
+	db, err := sqlx.Connect("postgres",
+		fmt.Sprintf("postgresql://%s:%s@%s:5432/%s?sslmode=disable", dbUser, dbPass, dbHost, dbName))
 	if err != nil {
 		return nil, errors.Wrap(err, "couldn't connect to db")
 	}
