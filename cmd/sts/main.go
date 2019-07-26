@@ -59,7 +59,7 @@ func main() {
 	}
 	defer db.Close()
 
-	s, err := graphql.NewResolver(db, "user.graphql", "tournament.graphql")
+	s, err := graphql.NewResolver(db, uScheme, uScheme)
 	if err != nil {
 		log.Printf("couldn't start graphql: %s", err)
 		return
